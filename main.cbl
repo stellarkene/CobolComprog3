@@ -10,7 +10,11 @@
       * Declare variables here, for example:
        01  WS-MESSAGE     PIC X(20) VALUE "HELLO WORLD".
 
+       COPY "billing-payment.cpy".
+
        PROCEDURE DIVISION.
            DISPLAY "THIS IS A TEST".
-           DISPLAY WS-MESSAGE.
+           ACCEPT SI-NAME.
+           DISPLAY SI-NAME.
+           
            STOP RUN.
