@@ -6,7 +6,7 @@ Group related data in 01/05 levels and use OCCURS for arrays.
 Keep each paragraph focused on one task (like functions).
 
 
-3. Indentation & Layout
+2. Indentation & Layout
 Indent one level for DISPLAY/ACCEPT under PERFORM/EVALUATE.
 One paragraph per block of logic, label it clearly:
 
