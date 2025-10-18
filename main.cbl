@@ -38,10 +38,7 @@
            EVALUATE USER-CHOICE
                WHEN 1
                    PERFORM CLEAR-SCREEN
-                   DISPLAY "YOU CHOSE TO ADD STUDENT"
-                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
-                   ACCEPT TEST-PRINT
-                   DISPLAY TEST-PRINT
+                   PERFORM ADD-STUDENT
     
                WHEN 2
                    PERFORM CLEAR-SCREEN
@@ -81,3 +78,50 @@
            CALL "SYSTEM" USING CLEAR-COMMAND
            
            EXIT PARAGRAPH.
+
+      *=====================
+      *FUNCTION: ADD-STUDENT
+      *=====================
+       ADD-STUDENT.
+           DISPLAY "YOU CHOSE TO ADD STUDENT"
+
+           DISPLAY "HOW MANY STUDENTS YOU WANT TO ENTER?"
+-              "(MAX 100): " WITH NO ADVANCING
+           ACCEPT STUDENT-COUNT
+
+           IF STUDENT-COUNT > 100
+               MOVE 100 TO STUDENT-COUNT
+               DISPLAY "LIMIT EXCEEDED. ONLY 100 STUDENTS PLEASE"
+           END-IF
+
+           PERFORM UNTIL STUDENT-COUNTER > STUDENT-COUNT
+               DISPLAY "==========================="
+               DISPLAY " Entering Student #" STUDENT-COUNTER
+               DISPLAY "==========================="
+               DISPLAY "Name: " ACCEPT SI-NAME (STUDENT-COUNTER)
+               DISPLAY "Age: " ACCEPT SI-AGE (STUDENT-COUNTER)
+               DISPLAY "Gender: " ACCEPT SI-GENDER (STUDENT-COUNTER)
+               DISPLAY "Religion: " ACCEPT SI-RELIGION (STUDENT-COUNTER)
+               ADD 1 TO STUDENT-COUNTER
+           END-PERFORM
+           
+           DISPLAY " "
+           DISPLAY "=====STUDENT LIST====="
+           MOVE 1 TO STUDENT-COUNTER
+
+           PERFORM UNTIL STUDENT-COUNTER > STUDENT-COUNT
+               DISPLAY "Student #" STUDENT-COUNTER
+               DISPLAY "Name: " SI-NAME (STUDENT-COUNTER)
+               DISPLAY "Age: " SI-AGE (STUDENT-COUNTER)
+               DISPLAY "Gender: " SI-GENDER (STUDENT-COUNTER)
+               DISPLAY "Religion: " SI-RELIGION (STUDENT-COUNTER)
+               DISPLAY "-------------------------"
+               ADD 1 TO STUDENT-COUNTER
+           END-PERFORM
+
+           DISPLAY "PLEASE PRESS ENTER TO EXIT"
+           ACCEPT TEST-PRINT
+           DISPLAY TEST-PRINT
+
+           EXIT PARAGRAPH. 
+      
