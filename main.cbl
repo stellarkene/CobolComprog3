@@ -9,15 +9,21 @@
        WORKING-STORAGE SECTION.
       * Declare variables here, for example:
        COPY "billing-payment.cpy".
+       01  OS-NAME        PIC X(50).
+       01  CLEAR-COMMAND  PIC X(10).
        01  USER-CHOICE     PIC 9.
        01  TEST-PRINT      PIC X(10).
 
        PROCEDURE DIVISION.
+           PERFORM MAIN-MENU
+           STOP RUN.
 
-           
-
-       MAIN-PARA.
+      *===================
+      *FUNCTION: MAIN MENU
+      *=================== 
+       MAIN-MENU.
            PERFORM UNTIL USER-CHOICE = 4
+           PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
            DISPLAY "         MAIN MENU         "
@@ -31,16 +37,25 @@
 
            EVALUATE USER-CHOICE
                WHEN 1
+                   PERFORM CLEAR-SCREEN
                    DISPLAY "YOU CHOSE TO ADD STUDENT"
-                   DISPLAY "PLEASE ENTER SOMETHING"
+                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
                    ACCEPT TEST-PRINT
                    DISPLAY TEST-PRINT
     
                WHEN 2
+                   PERFORM CLEAR-SCREEN
                    DISPLAY "YOU CHOSE TO VIEW STUDENTS"
+                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
+                   ACCEPT TEST-PRINT
+                   DISPLAY TEST-PRINT
     
                WHEN 3
+                   PERFORM CLEAR-SCREEN
                    DISPLAY "YOU CHOSE TO DELETE STUDENTS"
+                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
+                   ACCEPT TEST-PRINT
+                   DISPLAY TEST-PRINT
     
                WHEN 4
                    DISPLAY "EXITING PROGRAM..."
@@ -50,5 +65,19 @@
            END-EVALUATE
 
            END-PERFORM
+           EXIT PARAGRAPH.
+
+      *======================
+      *FUNCTION: CLEAR-SCREEN
+      *======================
+        CLEAR-SCREEN.
+           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
+           IF OS-NAME = "Windows_NT"
+               MOVE "cls" TO CLEAR-COMMAND
+           ELSE
+               MOVE "clear" TO CLEAR-COMMAND
+           END-IF
+
+           CALL "SYSTEM" USING CLEAR-COMMAND
            
-           STOP RUN.
+           EXIT PARAGRAPH.
