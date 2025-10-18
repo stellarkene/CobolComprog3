@@ -42,10 +42,7 @@
     
                WHEN 2
                    PERFORM CLEAR-SCREEN
-                   DISPLAY "YOU CHOSE TO VIEW STUDENTS"
-                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
-                   ACCEPT TEST-PRINT
-                   DISPLAY TEST-PRINT
+                   PERFORM VIEW-STUDENTS
     
                WHEN 3
                    PERFORM CLEAR-SCREEN
@@ -104,7 +101,18 @@
                DISPLAY "Religion: " ACCEPT SI-RELIGION (STUDENT-COUNTER)
                ADD 1 TO STUDENT-COUNTER
            END-PERFORM
-           
+
+           DISPLAY "PLEASE PRESS ENTER TO EXIT"
+           ACCEPT TEST-PRINT
+           DISPLAY TEST-PRINT
+
+           EXIT PARAGRAPH. 
+
+      *=======================
+      *FUNCTION: VIEW-STUDENTS
+      *=======================
+       VIEW-STUDENTS.
+           DISPLAY "YOU CHOSE TO VIEW STUDENTS"
            DISPLAY " "
            DISPLAY "=====STUDENT LIST====="
            MOVE 1 TO STUDENT-COUNTER
@@ -123,5 +131,5 @@
            ACCEPT TEST-PRINT
            DISPLAY TEST-PRINT
 
-           EXIT PARAGRAPH. 
+           EXIT PARAGRAPH.
       
