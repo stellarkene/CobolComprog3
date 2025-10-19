@@ -2,13 +2,19 @@
        PROGRAM-ID. DORM-BPIM-TRACKER.
 
        ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-      * FD statements go here if using files
+           INPUT-OUTPUT SECTION.
+               FILE-CONTROL.
+           SELECT STUDENT-FILE ASSIGN TO "students.dat"
+-              ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
+       FILE SECTION.
+           COPY "student-info.cpy".
+
        WORKING-STORAGE SECTION.
       * Declare variables here, for example:
-       COPY "billing-payment.cpy".
+           COPY "billing-payment-vars.cpy".
+       
        01  OS-NAME        PIC X(50).
        01  CLEAR-COMMAND  PIC X(10).
        01  USER-CHOICE     PIC 9.
@@ -82,29 +88,27 @@
        ADD-STUDENT.
            DISPLAY "YOU CHOSE TO ADD STUDENT"
 
-           DISPLAY "HOW MANY STUDENTS YOU WANT TO ENTER?"
--              "(MAX 100): " WITH NO ADVANCING
+           DISPLAY "How many students to add?"
            ACCEPT STUDENT-COUNT
+           OPEN EXTEND STUDENT-FILE
 
-           IF STUDENT-COUNT > 100
-               MOVE 100 TO STUDENT-COUNT
-               DISPLAY "LIMIT EXCEEDED. ONLY 100 STUDENTS PLEASE"
-           END-IF
-
-           PERFORM UNTIL STUDENT-COUNTER > STUDENT-COUNT
-               DISPLAY "==========================="
-               DISPLAY " Entering Student #" STUDENT-COUNTER
-               DISPLAY "==========================="
-               DISPLAY "Name: " ACCEPT SI-NAME (STUDENT-COUNTER)
-               DISPLAY "Age: " ACCEPT SI-AGE (STUDENT-COUNTER)
-               DISPLAY "Gender: " ACCEPT SI-GENDER (STUDENT-COUNTER)
-               DISPLAY "Religion: " ACCEPT SI-RELIGION (STUDENT-COUNTER)
-               ADD 1 TO STUDENT-COUNTER
+           PERFORM VARYING S_C FROM 1 BY 1 UNTIL S_C > STUDENT-COUNT
+               DISPLAY "==============="
+               DISPLAY "STUDENT #" S_C
+               DISPLAY "==============="
+               DISPLAY "Name: " ACCEPT SI-NAME
+               DISPLAY "Age: " ACCEPT SI-AGE
+               DISPLAY "Gender: " ACCEPT SI-GENDER
+               DISPLAY "Religion: " ACCEPT SI-RELIGION
+               WRITE STUDENT-RECORD
+               DISPLAY " "
            END-PERFORM
 
-           DISPLAY "PLEASE PRESS ENTER TO EXIT"
-           ACCEPT TEST-PRINT
-           DISPLAY TEST-PRINT
+
+           CLOSE STUDENT-FILE
+           
+           DISPLAY "Students saved successfully!"
+           ACCEPT OMITTED
 
            EXIT PARAGRAPH. 
 
@@ -112,24 +116,29 @@
       *FUNCTION: VIEW-STUDENTS
       *=======================
        VIEW-STUDENTS.
-           DISPLAY "YOU CHOSE TO VIEW STUDENTS"
-           DISPLAY " "
-           DISPLAY "=====STUDENT LIST====="
-           MOVE 1 TO STUDENT-COUNTER
-
-           PERFORM UNTIL STUDENT-COUNTER > STUDENT-COUNT
-               DISPLAY "Student #" STUDENT-COUNTER
-               DISPLAY "Name: " SI-NAME (STUDENT-COUNTER)
-               DISPLAY "Age: " SI-AGE (STUDENT-COUNTER)
-               DISPLAY "Gender: " SI-GENDER (STUDENT-COUNTER)
-               DISPLAY "Religion: " SI-RELIGION (STUDENT-COUNTER)
-               DISPLAY "-------------------------"
-               ADD 1 TO STUDENT-COUNTER
+           
+           OPEN INPUT STUDENT-FILE
+           MOVE 1 TO S_C
+                  PERFORM UNTIL EOF = 'Y'
+           READ STUDENT-FILE
+               AT END
+                   MOVE 'Y' TO EOF
+               NOT AT END
+                   DISPLAY "==============="
+                   DISPLAY "STUDENT #" S_C
+                   DISPLAY "==============="
+                   DISPLAY "Name: " SI-NAME
+                   DISPLAY "Age: " SI-AGE
+                   DISPLAY "Gender: " SI-GENDER
+                   DISPLAY "Religion: " SI-RELIGION
+                   ADD 1 TO S_C
+                   DISPLAY " "
+           END-READ
            END-PERFORM
 
-           DISPLAY "PLEASE PRESS ENTER TO EXIT"
-           ACCEPT TEST-PRINT
-           DISPLAY TEST-PRINT
+           CLOSE STUDENT-FILE
+           DISPLAY "Data loaded into memory!"
+           ACCEPT OMITTED
 
            EXIT PARAGRAPH.
       
