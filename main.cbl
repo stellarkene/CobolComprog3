@@ -148,7 +148,10 @@
                    DISPLAY "Name: " SI-NAME
                    DISPLAY "Age: " SI-AGE
                    DISPLAY "Gender: " SI-GENDER
+                   DISPLAY "Contact Number: " SI-CONTACT-NUM
                    DISPLAY "Religion: " SI-RELIGION
+                   DISPLAY "Assigned Room: " SI-ROOM-NUM
+                   DISPLAY "Rent Amount: " SI-RENT-AMOUNT
                    ADD 1 TO S_C
                    DISPLAY " "
            END-READ
