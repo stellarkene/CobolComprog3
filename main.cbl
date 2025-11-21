@@ -70,7 +70,7 @@
       *======================
       *FUNCTION: CLEAR-SCREEN
       *======================
-        CLEAR-SCREEN.
+       CLEAR-SCREEN.
            ACCEPT OS-NAME FROM ENVIRONMENT "OS"
            IF OS-NAME = "Windows_NT"
                MOVE "cls" TO CLEAR-COMMAND
@@ -87,30 +87,48 @@
       *=====================
        ADD-STUDENT.
            DISPLAY "YOU CHOSE TO ADD STUDENT"
+           DISPLAY "ADD STUDENT? (Y/y): "
+           ACCEPT WS-ADD-FLAG
+           INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
 
-           DISPLAY "How many students to add?"
-           ACCEPT STUDENT-COUNT
-           OPEN EXTEND STUDENT-FILE
-
-           PERFORM VARYING S_C FROM 1 BY 1 UNTIL S_C > STUDENT-COUNT
-               DISPLAY "==============="
-               DISPLAY "STUDENT #" S_C
-               DISPLAY "==============="
-               DISPLAY "Name: " ACCEPT SI-NAME
-               DISPLAY "Age: " ACCEPT SI-AGE
-               DISPLAY "Gender: " ACCEPT SI-GENDER
-               DISPLAY "Religion: " ACCEPT SI-RELIGION
-               WRITE STUDENT-RECORD
-               DISPLAY " "
-           END-PERFORM
-
-
-           CLOSE STUDENT-FILE
-           
+               IF WS-ADD-FLAG = "Y"
+                OPEN EXTEND STUDENT-FILE
+        
+                PERFORM UNTIL WS-ADD-FLAG = "N"
+                    DISPLAY "==============="
+                    DISPLAY "ADD STUDENT"
+                    DISPLAY "==============="
+                    DISPLAY "Name: " ACCEPT WS-NAME
+                    DISPLAY "Age: " ACCEPT WS-AGE
+                    DISPLAY "Gender: " ACCEPT WS-GENDER
+                    DISPLAY "Contact Number: " ACCEPT WS-CONTACT-NUM
+                    DISPLAY "Religion: " ACCEPT WS-RELIGION
+                    DISPLAY "Assign Room: " ACCEPT WS-ROOM-NUM
+                    DISPLAY "Rent Amount: " ACCEPT WS-RENT-AMOUNT
+        
+                    MOVE WS-NAME TO SI-NAME
+                    MOVE WS-AGE TO SI-AGE
+                    MOVE WS-GENDER TO SI-GENDER
+                    MOVE WS-CONTACT-NUM TO SI-CONTACT-NUM
+                    MOVE WS-RELIGION TO SI-RELIGION
+                    MOVE WS-ROOM-NUM TO SI-ROOM-NUM
+                    MOVE WS-RENT-AMOUNT TO SI-RENT-AMOUNT
+        
+                    WRITE STUDENT-RECORD
+        
+                    DISPLAY "ADD ANOTHER? (Y/N):"
+                    ACCEPT WS-ADD-FLAG
+                    INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
+                    INSPECT WS-ADD-FLAG CONVERTING 'n' TO 'N'
+                END-PERFORM
+        
+                CLOSE STUDENT-FILE
+               END-IF
+        
            DISPLAY "Students saved successfully!"
            ACCEPT OMITTED
+       EXIT PARAGRAPH.
 
-           EXIT PARAGRAPH. 
 
       *=======================
       *FUNCTION: VIEW-STUDENTS
