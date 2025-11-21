@@ -7,6 +7,9 @@
            SELECT STUDENT-FILE ASSIGN TO "students.dat"
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
+           SELECT TEMP-STUDENT-FILE ASSIGN TO "temp.dat"
+-              ORGANIZATION IS LINE SEQUENTIAL.
+
        DATA DIVISION.
        FILE SECTION.
            COPY "student-info.cpy".
@@ -28,7 +31,7 @@
       *FUNCTION: MAIN MENU
       *=================== 
        MAIN-MENU.
-           PERFORM UNTIL USER-CHOICE = 4
+           PERFORM UNTIL USER-CHOICE = 5
            PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
@@ -36,9 +39,10 @@
            DISPLAY "==========================="
            DISPLAY "1 - ADD STUDENT"
            DISPLAY "2 - VIEW STUDENTS"
-           DISPLAY "3 - DELETE STUDENTS"
-           DISPLAY "4 - EXIT"
-           DISPLAY "ENTER CHOICE (1 - 4): "
+           DISPLAY "3 - EDIT STUDENT INFO"
+           DISPLAY "4 - DELETE STUDENTS"
+           DISPLAY "5 - EXIT"
+           DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT USER-CHOICE
 
            EVALUATE USER-CHOICE
@@ -49,15 +53,20 @@
                WHEN 2
                    PERFORM CLEAR-SCREEN
                    PERFORM VIEW-STUDENTS
-    
+
+
                WHEN 3
+                   PERFORM CLEAR-SCREEN
+                   PERFORM EDIT-STUDENTS
+    
+               WHEN 4
                    PERFORM CLEAR-SCREEN
                    DISPLAY "YOU CHOSE TO DELETE STUDENTS"
                    DISPLAY "PLEASE PRESS ENTER TO EXIT"
                    ACCEPT TEST-PRINT
                    DISPLAY TEST-PRINT
     
-               WHEN 4
+               WHEN 5
                    DISPLAY "EXITING PROGRAM..."
     
                WHEN OTHER 
@@ -80,6 +89,16 @@
 
            CALL "SYSTEM" USING CLEAR-COMMAND
            
+           EXIT PARAGRAPH.
+
+      *=======================
+      *FUNCTION: EXIT-PROMT
+      *=======================
+       EXIT-PROMT.
+
+           DISPLAY "Press enter to exit."
+           ACCEPT OMITTED
+
            EXIT PARAGRAPH.
 
       *=====================
@@ -126,7 +145,7 @@
                END-IF
         
            DISPLAY "Students saved successfully!"
-           ACCEPT OMITTED
+           PERFORM EXIT-PROMT
        EXIT PARAGRAPH.
 
 
@@ -159,7 +178,96 @@
 
            CLOSE STUDENT-FILE
            DISPLAY "Data loaded into memory!"
-           ACCEPT OMITTED
+           
+           PERFORM EXIT-PROMT
 
+           EXIT PARAGRAPH.
+
+      *=======================
+      *FUNCTION: EDIT-STUDENTS
+      *=======================
+       EDIT-STUDENTS.
+           DISPLAY "YOU CHOSE TO EDIT STUDENTS"
+           
+           DISPLAY "Enter a name of the student to edit: "
+           ACCEPT SEARCH-NAME
+
+           OPEN INPUT STUDENT-FILE
+               OUTPUT TEMP-STUDENT-FILE
+
+           MOVE "N" TO EOF
+
+           PERFORM UNTIL EOF = "Y"
+               READ STUDENT-FILE
+                   AT END
+                       MOVE "Y" TO EOF
+
+                   NOT AT END
+                       IF SI-NAME = SEARCH-NAME
+                           DISPLAY "Editing student: " SI-NAME
+
+                       DISPLAY "Edit Name (keep empty to unchange)"
+                           ACCEPT TEMP-NAME
+                           IF TEMP-NAME NOT = SPACES
+                               MOVE TEMP-NAME TO SI-NAME
+                           END-IF
+
+                       DISPLAY "Edit age (keep empty to unchange)"
+                           ACCEPT TEMP-AGE
+                           IF TEMP-AGE NOT = SPACES
+                               MOVE TEMP-AGE TO SI-AGE
+                           END-IF
+
+                       DISPLAY "Edit Gender (keep empty to unchange)"
+                           ACCEPT TEMP-GENDER
+                           IF TEMP-GENDER NOT = SPACES
+                               MOVE TEMP-GENDER TO SI-GENDER
+                           END-IF
+
+                       DISPLAY "Edit Contact (keep empty to unchange)"
+                           ACCEPT TEMP-CONTACT-NUM
+                           IF TEMP-CONTACT-NUM NOT = SPACES
+                               MOVE TEMP-CONTACT-NUM TO SI-CONTACT-NUM
+                           END-IF
+
+                       DISPLAY "Edit Religion (keep empty to unchange)"
+                           ACCEPT TEMP-RELIGION
+                           IF TEMP-RELIGION NOT = SPACES
+                               MOVE TEMP-RELIGION TO SI-RELIGION
+                           END-IF
+
+                       DISPLAY "Edit Room (keep empty to unchange)"
+                           ACCEPT TEMP-ROOM-NUM
+                           IF TEMP-ROOM-NUM NOT = SPACES
+                               MOVE TEMP-ROOM-NUM TO SI-ROOM-NUM
+                           END-IF
+
+                       DISPLAY "Edit Rent (keep empty to unchange)"
+                           ACCEPT TEMP-RENT-AMOUNT
+                           IF TEMP-RENT-AMOUNT NOT = SPACES
+                               MOVE TEMP-RENT-AMOUNT TO SI-RENT-AMOUNT
+                           END-IF
+                       END-IF
+
+                   WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
+
+               END-READ
+           END-PERFORM
+
+           CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+
+           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
+
+           IF OS-NAME = "Windows_NT"
+               CALL "SYSTEM" USING "del students.dat"
+               CALL "SYSTEM" USING "rename temp.dat students.dat"
+
+           ELSE
+               CALL "SYSTEM" USING "rm students.dat"
+               CALL "SYSTEM" USING "mv temp.dat students.dat"
+
+           END-IF
+
+           PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
       
