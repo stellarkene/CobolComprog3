@@ -156,6 +156,7 @@
            
            OPEN INPUT STUDENT-FILE
            MOVE 1 TO S_C
+           MOVE "N" TO EOF
                   PERFORM UNTIL EOF = 'Y'
            READ STUDENT-FILE
                AT END
