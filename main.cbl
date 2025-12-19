@@ -61,10 +61,7 @@
     
                WHEN 4
                    PERFORM CLEAR-SCREEN
-                   DISPLAY "YOU CHOSE TO DELETE STUDENTS"
-                   DISPLAY "PLEASE PRESS ENTER TO EXIT"
-                   ACCEPT TEST-PRINT
-                   DISPLAY TEST-PRINT
+                   PERFORM DELETE-STUDENTS
     
                WHEN 5
                    DISPLAY "EXITING PROGRAM..."
@@ -271,4 +268,50 @@
 
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
+
       
+      *=========================
+      *FUNCTION: DELETE-STUDENTS
+      *=========================
+       DELETE-STUDENTS.
+           DISPLAY "YOU CHOSE TO DELETE STUDENTS"
+
+           DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE"
+           ACCEPT SEARCH-NAME
+
+           OPEN INPUT STUDENT-FILE
+               OUTPUT TEMP-STUDENT-FILE
+           
+               MOVE "N" TO EOF
+                   
+               PERFORM UNTIL EOF = "Y"
+                   READ STUDENT-FILE
+                       AT END 
+                            MOVE "Y" TO EOF
+
+                       NOT AT END
+                       IF SI-NAME = SEARCH-NAME
+                           DISPLAY "DELETING STUDENT: " SI-NAME
+                       ELSE
+                           WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
+                       END-IF
+
+                   END-READ
+               END-PERFORM
+
+           CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+
+           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
+
+           IF OS-NAME = "Windows_NT"
+               CALL "SYSTEM" USING "del students.dat"
+               CALL "SYSTEM" USING "rename temp.dat students.dat"
+
+           ELSE
+               CALL "SYSTEM" USING "rm students.dat"
+               CALL "SYSTEM" USING "mv temp.dat students.dat"
+
+           END-IF
+           
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
