@@ -63,6 +63,11 @@
        01  UTIL-DM-CHOICE                          PIC 9.
        01  UTIL-SEARCH-NAME                        PIC X(50).
        01  UTIL-EOF                                PIC X VALUE 'N'.
+       01  UTIL-EDIT-AGAIN                         PIC X VALUE "Y".
+       01  UTIL-EDIT-FOUND                         PIC X VALUE "N".
+       01  UTIL-DELETE-CHOICE                      PIC X VALUE "Y".
+       01  UTIL-DELETE-FOUND                        PIC X VALUE "N".
+
 
       *WS STUDENT
        01  WS-STUDENT-ID                           PIC X(10).
@@ -372,110 +377,150 @@
       *=======================
        EDIT-STUDENTS.
            DISPLAY "YOU CHOSE TO EDIT STUDENTS"
-           
-           DISPLAY "Enter a name of the student to edit: "
-           ACCEPT UTIL-SEARCH-NAME
-
-           OPEN INPUT STUDENT-FILE
-               OUTPUT TEMP-STUDENT-FILE
-
-           MOVE "N" TO UTIL-EOF
-
-           PERFORM UNTIL UTIL-EOF = "Y"
-               READ STUDENT-FILE
-                   AT END
-                       MOVE "Y" TO UTIL-EOF
-
-                   NOT AT END
+       
+           MOVE "Y" TO UTIL-EDIT-AGAIN
+       
+           PERFORM UNTIL UTIL-EDIT-AGAIN = "N"
+       
+               MOVE "N" TO UTIL-EDIT-FOUND
+       
+               DISPLAY "Enter name of the student to edit: "
+               ACCEPT UTIL-SEARCH-NAME
+       
+               OPEN INPUT STUDENT-FILE
+                    OUTPUT TEMP-STUDENT-FILE
+       
+               MOVE "N" TO UTIL-EOF
+       
+               PERFORM UNTIL UTIL-EOF = "Y"
+                   READ STUDENT-FILE
+                       AT END
+                           MOVE "Y" TO UTIL-EOF
+       
+                       NOT AT END
                        IF SI-NAME = UTIL-SEARCH-NAME
+                           MOVE "Y" TO UTIL-EDIT-FOUND
                            DISPLAY "Editing student: " SI-NAME
-
-                       DISPLAY "Edit Name (keep empty to unchange)"
+       
+                           DISPLAY "Edit Name"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-NAME
                            IF TEMP-NAME NOT = SPACES
                                MOVE TEMP-NAME TO SI-NAME
                            END-IF
-
-                       DISPLAY "Edit age (keep empty to unchange)"
+       
+                           DISPLAY "Edit Age"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-AGE
                            IF TEMP-AGE NOT = SPACES
                                MOVE TEMP-AGE TO SI-AGE
                            END-IF
-
-                       DISPLAY "Edit Gender (keep empty to unchange)"
+       
+                           DISPLAY "Edit Gender"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-GENDER
                            IF TEMP-GENDER NOT = SPACES
                                MOVE TEMP-GENDER TO SI-GENDER
                            END-IF
-
-                       DISPLAY "Edit Contact (keep empty to unchange)"
+       
+                           DISPLAY "Edit Contact"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-CONTACT-NUM
                            IF TEMP-CONTACT-NUM NOT = SPACES
                                MOVE TEMP-CONTACT-NUM TO SI-CONTACT-NUM
                            END-IF
-
-                       DISPLAY "Edit Room (keep empty to unchange)"
+       
+                           DISPLAY "Edit Room"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-ROOM-NUM
                            IF TEMP-ROOM-NUM NOT = SPACES
                                MOVE TEMP-ROOM-NUM TO SI-ROOM-NUM
                            END-IF
-
-                       DISPLAY "Edit Rent (keep empty to unchange)"
+       
+                           DISPLAY "Edit Rent"
+                           DISPLAY "(keep empty to unchange)"
                            ACCEPT TEMP-RENT-AMOUNT
                            IF TEMP-RENT-AMOUNT NOT = SPACES
                                MOVE TEMP-RENT-AMOUNT TO SI-RENT-AMOUNT
                            END-IF
                        END-IF
-
-                   WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
-
-               END-READ
+       
+                       WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
+                   END-READ
+               END-PERFORM
+       
+               CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+       
+               PERFORM SAVE-STUDENT-RECORD
+       
+               IF UTIL-EDIT-FOUND = "N"
+                   DISPLAY "Student not found."
+               ELSE
+                   DISPLAY "Student record updated."
+               END-IF
+       
+               DISPLAY "Edit another student? (Y/N): "
+               ACCEPT UTIL-EDIT-AGAIN
+       
            END-PERFORM
-
-           CLOSE STUDENT-FILE TEMP-STUDENT-FILE
-
-           PERFORM SAVE-STUDENT-RECORD
-
+       
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
-
-      
+       
+             
       *=========================
       *FUNCTION: DELETE-STUDENTS
       *=========================
        DELETE-STUDENTS.
+           MOVE "Y" TO UTIL-DELETE-CHOICE
 
-           DISPLAY "YOU CHOSE TO DELETE STUDENTS"
+           PERFORM UNTIL UTIL-DELETE-CHOICE = "N"
 
-           DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE"
-           ACCEPT UTIL-SEARCH-NAME
+               DISPLAY "YOU CHOSE TO DELETE STUDENTS"
+               DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE:"
+               ACCEPT UTIL-SEARCH-NAME
 
-           OPEN INPUT STUDENT-FILE
-               OUTPUT TEMP-STUDENT-FILE
-           
                MOVE "N" TO UTIL-EOF
-                   
-               PERFORM UNTIL UTIL-EOF = "Y"
-                   READ STUDENT-FILE
-                       AT END 
-                            MOVE "Y" TO UTIL-EOF
+               MOVE "N" TO UTIL-DELETE-FOUND
 
-                       NOT AT END
+               OPEN INPUT STUDENT-FILE
+                    OUTPUT TEMP-STUDENT-FILE
+
+               PERFORM UNTIL UTIL-EOF = "Y"
+               READ STUDENT-FILE
+                   AT END
+                       MOVE "Y" TO UTIL-EOF
+                   NOT AT END
                        IF SI-NAME = UTIL-SEARCH-NAME
                            DISPLAY "DELETING STUDENT: " SI-NAME
+                           MOVE "Y" TO UTIL-DELETE-FOUND
                        ELSE
                            WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
                        END-IF
-
-                   END-READ
+               END-READ
                END-PERFORM
 
-           CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+               CLOSE STUDENT-FILE TEMP-STUDENT-FILE
 
-           PERFORM SAVE-STUDENT-RECORD
-           
+               IF UTIL-DELETE-FOUND = "Y"
+                   PERFORM SAVE-STUDENT-RECORD
+                   DISPLAY "STUDENT SUCCESSFULLY DELETED."
+               ELSE
+                   DISPLAY "STUDENT NOT FOUND."
+               END-IF
+
+               DISPLAY "DELETE ANOTHER STUDENT? (Y/N): "
+               ACCEPT UTIL-DELETE-CHOICE
+
+               IF UTIL-DELETE-CHOICE NOT = "Y"
+                   MOVE "N" TO UTIL-DELETE-CHOICE
+               END-IF
+
+           END-PERFORM
+
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
+
 
       *============================
       *FUNCTION: CONVERT FLAG 
