@@ -18,20 +18,27 @@
       * Declare variables here, for example:
            COPY "billing-payment-vars.cpy".
        
-       01  OS-NAME        PIC X(50).
-       01  CLEAR-COMMAND  PIC X(10).
-       01  USER-CHOICE     PIC 9.
-       01  TEST-PRINT      PIC X(10).
+       01  UTIL-OS-NAME                            PIC X(50).
+       01  UTIL-CLEAR-COMMAND                      PIC X(10).
+       01  UTIL-SM-CHOICE                          PIC 9.
+       01  TEST-PRINT                              PIC X(10).
 
        PROCEDURE DIVISION.
            PERFORM STUDENT-MANAGEMENT.
            STOP RUN.
-
-      *===================
+      *============================
       *FUNCTION: MAIN MENU
-      *=================== 
+      *============================
+
+      *============================
+      *FUNCTION: DORM MANAGEMENT
+      *============================
+
+      *============================
+      *FUNCTION: STUDENT MANAGEMENT
+      *============================
        STUDENT-MANAGEMENT.
-           PERFORM UNTIL USER-CHOICE = 5
+           PERFORM UNTIL UTIL-SM-CHOICE = 5
            PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
@@ -43,9 +50,9 @@
            DISPLAY "4 - DELETE STUDENTS"
            DISPLAY "5 - EXIT"
            DISPLAY "ENTER CHOICE (1 - 5): "
-           ACCEPT USER-CHOICE
+           ACCEPT UTIL-SM-CHOICE
 
-           EVALUATE USER-CHOICE
+           EVALUATE UTIL-SM-CHOICE
                WHEN 1
                    PERFORM CLEAR-SCREEN
                    PERFORM ADD-STUDENT
@@ -77,14 +84,14 @@
       *FUNCTION: CLEAR-SCREEN
       *======================
        CLEAR-SCREEN.
-           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
-           IF OS-NAME = "Windows_NT"
-               MOVE "cls" TO CLEAR-COMMAND
+           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
+           IF UTIL-OS-NAME = "Windows_NT"
+               MOVE "cls" TO UTIL-CLEAR-COMMAND
            ELSE
-               MOVE "clear" TO CLEAR-COMMAND
+               MOVE "clear" TO UTIL-CLEAR-COMMAND
            END-IF
 
-           CALL "SYSTEM" USING CLEAR-COMMAND
+           CALL "SYSTEM" USING UTIL-CLEAR-COMMAND
            
            EXIT PARAGRAPH.
 
@@ -254,9 +261,9 @@
 
            CLOSE STUDENT-FILE TEMP-STUDENT-FILE
 
-           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
+           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
 
-           IF OS-NAME = "Windows_NT"
+           IF UTIL-OS-NAME = "Windows_NT"
                CALL "SYSTEM" USING "del students.dat"
                CALL "SYSTEM" USING "rename temp.dat students.dat"
 
@@ -301,9 +308,9 @@
 
            CLOSE STUDENT-FILE TEMP-STUDENT-FILE
 
-           ACCEPT OS-NAME FROM ENVIRONMENT "OS"
+           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
 
-           IF OS-NAME = "Windows_NT"
+           IF UTIL-OS-NAME = "Windows_NT"
                CALL "SYSTEM" USING "del students.dat"
                CALL "SYSTEM" USING "rename temp.dat students.dat"
 
