@@ -39,10 +39,19 @@
            05  TEMP-RENT-AMOUNT                    PIC X(6).
            05  TEMP-ELECTRIC-BILL                  PIC X(7).
            05  TEMP-WIFI-BILL                      PIC X(7).
-           05  TEMP-PAYMENT-STATUS                 PIC X(10).
+           05  TEMP-STATUS                         PIC X(10).
 
       *DORM FILE
            FD DORM-FILE.
+       01  DORM-RECORD.
+           05  DI-FLOOR                            PIC X(2).
+           05  DI-ROOM-NUM                         PIC X(6).
+           05  DI-RENT-AMOUNT                      PIC X(6).
+           05  DI-ELECTRICITY                      PIC X(7).
+           05  DI-WIFI                             PIC X(7).
+           05  DI-STATUS                           PIC X(10).
+           05  DI-ID                               PIC X(10).
+           05  DI-DATE-PAID                        PIC X(8).
 
       *WS
        WORKING-STORAGE SECTION.
@@ -56,6 +65,7 @@
        01  UTIL-EOF                                PIC X VALUE 'N'.
 
       *WS STUDENT
+       01  WS-STUDENT-ID                           PIC X(10).
        01  WS-NAME                                 PIC X(50).
        01  WS-AGE                                  PIC 9(2).
        01  WS-GENDER                               PIC X(15).
@@ -73,7 +83,8 @@
        01  WS-DORM-ELECTRICITY                     PIC 9(4)V99.
        01  WS-DORM-WIFI                            PIC 9(4)V99.
        01  WS-DORM-STATUS                          PIC X(10).
-       
+       01  WS-DORM-ID                              PIC X(10).
+       01  WS-DORM-DATE-PAID                       PIC X(8).
        
       *WS ADD
        01  WS-ADD-FLAG                             PIC X(2).
@@ -108,11 +119,12 @@
                WHEN 2
                    PERFORM DORM-MANAGEMENT
                WHEN 3
-               
+                   DISPLAY "PAYMENT MANAGEMENT"
                WHEN 4
-               
+                   DISPLAY "REPORT MENU"
                WHEN 5
-               
+                   DISPLAY "EXITING..."
+                   PERFORM EXIT-PROMT
                WHEN OTHER
                    DISPLAY "INVALID INPUT, PLEASE TRY AGAIN"
                    PERFORM EXIT-PROMT
@@ -143,14 +155,19 @@
 
            EVALUATE UTIL-DM-CHOICE
                WHEN 1
-
+                   PERFORM CLEAR-SCREEN
+                   PERFORM ADD-DORM
                WHEN 2
+                   PERFORM CLEAR-SCREEN
 
                WHEN 3
-
+                   PERFORM CLEAR-SCREEN
+                   
                WHEN 4
+                   PERFORM CLEAR-SCREEN
 
                WHEN 5
+                   PERFORM CLEAR-SCREEN
 
                WHEN OTHER
                    DISPLAY "INVALID INPUT, TRY AGAIN"
@@ -158,6 +175,44 @@
            END-EVALUATE
            
            END-PERFORM
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+
+      *============================
+      *FUNCTION: ADD DORM 
+      *============================
+       ADD-DORM.
+           DISPLAY "YOU CHOSE TO ADD DORM"
+           DISPLAY "ADD DORM? (Y/N)"
+           ACCEPT WS-ADD-FLAG
+
+           PERFORM CONVERT-FLAG
+
+           IF WS-ADD-FLAG = "Y"
+               OPEN EXTEND DORM-FILE
+               PERFORM UNTIL WS-ADD-FLAG = "N"
+                   DISPLAY "PLEASE ENTER DORM ROOM FLOOR: "
+                   ACCEPT WS-DORM-FLOOR
+
+                   DISPLAY "PLEASE ENTER DORM ROOM NUMBER: "
+                   ACCEPT WS-DORM-ROOM-NUM
+
+                   DISPLAY "PLEASE ENTER RENT AMOUNT: "
+                   ACCEPT WS-DORM-RENT-AMOUNT
+
+                   MOVE WS-DORM-FLOOR TO DI-FLOOR
+                   MOVE WS-DORM-ROOM-NUM TO DI-ROOM-NUM
+                   MOVE WS-DORM-RENT-AMOUNT TO DI-RENT-AMOUNT
+
+                   WRITE DORM-RECORD
+
+                   DISPLAY "ADD ANOTHER? (Y/N):"
+                   ACCEPT WS-ADD-FLAG
+                   PERFORM CONVERT-FLAG
+               END-PERFORM
+               CLOSE DORM-FILE
+           END-IF
+
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
@@ -238,9 +293,9 @@
       *=====================
        ADD-STUDENT.
            DISPLAY "YOU CHOSE TO ADD STUDENT"
-           DISPLAY "ADD STUDENT? (Y/y): "
+           DISPLAY "ADD STUDENT? (Y/N): "
            ACCEPT WS-ADD-FLAG
-           INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
+           PERFORM CONVERT-FLAG
 
                IF WS-ADD-FLAG = "Y"
                 OPEN EXTEND STUDENT-FILE
@@ -267,8 +322,8 @@
         
                     DISPLAY "ADD ANOTHER? (Y/N):"
                     ACCEPT WS-ADD-FLAG
-                    INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
-                    INSPECT WS-ADD-FLAG CONVERTING 'n' TO 'N'
+                    PERFORM CONVERT-FLAG
+
                 END-PERFORM
         
                 CLOSE STUDENT-FILE
@@ -399,6 +454,7 @@
       *FUNCTION: DELETE-STUDENTS
       *=========================
        DELETE-STUDENTS.
+
            DISPLAY "YOU CHOSE TO DELETE STUDENTS"
 
            DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE"
@@ -440,3 +496,13 @@
            
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
+
+      *============================
+      *FUNCTION: CONVERT FLAG 
+      *============================
+       CONVERT-FLAG.
+           INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
+           INSPECT WS-ADD-FLAG CONVERTING 'n' TO 'N'
+           EXIT PARAGRAPH.
+
+       
