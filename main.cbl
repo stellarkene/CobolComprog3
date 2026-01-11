@@ -164,6 +164,7 @@
                    PERFORM ADD-DORM
                WHEN 2
                    PERFORM CLEAR-SCREEN
+                   PERFORM VIEW-DORMS
 
                WHEN 3
                    PERFORM CLEAR-SCREEN
@@ -218,6 +219,39 @@
                CLOSE DORM-FILE
            END-IF
 
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+
+      *============================
+      *FUNCTION: ADD DORM 
+      *============================
+       VIEW-DORMS.
+              
+           OPEN INPUT DORM-FILE
+       
+           MOVE "N" TO UTIL-EOF
+       
+           PERFORM UNTIL UTIL-EOF = "Y"
+               READ DORM-FILE
+                   AT END
+                       MOVE "Y" TO UTIL-EOF
+                   NOT AT END
+                       DISPLAY "========================"
+                       DISPLAY "DORM ID: " DI-ID
+                       DISPLAY "========================"
+                       DISPLAY "Floor: " DI-FLOOR
+                       DISPLAY "Room Number: " DI-ROOM-NUM
+                       DISPLAY "Rent Amount: " DI-RENT-AMOUNT
+                       DISPLAY "Electricity: " DI-ELECTRICITY
+                       DISPLAY "WiFi: " DI-WIFI
+                       DISPLAY "Status: " DI-STATUS
+                       DISPLAY "Date Paid: " DI-DATE-PAID
+                       DISPLAY SPACE
+               END-READ
+           END-PERFORM
+       
+           CLOSE DORM-FILE
+       
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
@@ -366,7 +400,6 @@
            END-PERFORM
 
            CLOSE STUDENT-FILE
-           DISPLAY "Data loaded into memory!"
            
            PERFORM EXIT-PROMT
 
