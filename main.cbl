@@ -434,17 +434,7 @@
 
            CLOSE STUDENT-FILE TEMP-STUDENT-FILE
 
-           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
-
-           IF UTIL-OS-NAME = "Windows_NT"
-               CALL "SYSTEM" USING "del students.dat"
-               CALL "SYSTEM" USING "rename temp.dat students.dat"
-
-           ELSE
-               CALL "SYSTEM" USING "rm students.dat"
-               CALL "SYSTEM" USING "mv temp.dat students.dat"
-
-           END-IF
+           PERFORM SAVE-STUDENT-RECORD
 
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
@@ -482,17 +472,7 @@
 
            CLOSE STUDENT-FILE TEMP-STUDENT-FILE
 
-           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
-
-           IF UTIL-OS-NAME = "Windows_NT"
-               CALL "SYSTEM" USING "del students.dat"
-               CALL "SYSTEM" USING "rename temp.dat students.dat"
-
-           ELSE
-               CALL "SYSTEM" USING "rm students.dat"
-               CALL "SYSTEM" USING "mv temp.dat students.dat"
-
-           END-IF
+           PERFORM SAVE-STUDENT-RECORD
            
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
@@ -506,3 +486,20 @@
            EXIT PARAGRAPH.
 
        
+      *============================
+      *FUNCTION: SAVE STUDENT RECORD 
+      *============================
+       SAVE-STUDENT-RECORD.
+           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
+
+           IF UTIL-OS-NAME = "Windows_NT"
+               CALL "SYSTEM" USING "del students.dat"
+               CALL "SYSTEM" USING "rename temp.dat students.dat"
+
+           ELSE
+               CALL "SYSTEM" USING "rm students.dat"
+               CALL "SYSTEM" USING "mv temp.dat students.dat"
+
+           END-IF
+           EXIT PARAGRAPH.
+           
