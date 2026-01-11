@@ -10,29 +10,156 @@
            SELECT TEMP-STUDENT-FILE ASSIGN TO "temp.dat"
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
+           SELECT DORM-FILE ASSIGN TO "dorm.dat"
+-              ORGANIZATION IS LINE SEQUENTIAL.
+
        DATA DIVISION.
        FILE SECTION.
-           COPY "student-info.cpy".
+      *STUDENT RECORD
+           FD  STUDENT-FILE.
+       01  STUDENT-RECORD.
+           05  SI-NAME                             PIC X(50).
+           05  SI-AGE                              PIC 9(2).
+           05  SI-GENDER                           PIC X(15).
+           05  SI-CONTACT-NUM                      PIC X(12).
+           05  SI-ROOM-NUM                         PIC X(20).
+           05  SI-RENT-AMOUNT                      PIC X(6).
+           05  SI-ELECTRIC-BILL                    PIC X(7).
+           05  SI-WIFI-BILL                        PIC X(7).
+           05  SI-PAYMENT-STATUS                   PIC X(10).
 
+      *TEMP STUDENT RECORD
+       FD  TEMP-STUDENT-FILE.
+       01  TEMP-STUDENT-RECORD.
+           05  TEMP-NAME                           PIC X(50).
+           05  TEMP-AGE                            PIC 9(2).
+           05  TEMP-GENDER                         PIC X(15).         
+           05  TEMP-CONTACT-NUM                    PIC X(12).
+           05  TEMP-ROOM-NUM                       PIC X(20).
+           05  TEMP-RENT-AMOUNT                    PIC X(6).
+           05  TEMP-ELECTRIC-BILL                  PIC X(7).
+           05  TEMP-WIFI-BILL                      PIC X(7).
+           05  TEMP-PAYMENT-STATUS                 PIC X(10).
+
+      *DORM FILE
+           FD DORM-FILE.
+
+      *WS
        WORKING-STORAGE SECTION.
-      * Declare variables here, for example:
-           COPY "billing-payment-vars.cpy".
-       
+      *UTIL
        01  UTIL-OS-NAME                            PIC X(50).
        01  UTIL-CLEAR-COMMAND                      PIC X(10).
        01  UTIL-SM-CHOICE                          PIC 9.
-       01  TEST-PRINT                              PIC X(10).
+       01  UTIL-MM-CHOICE                          PIC 9.
+       01  UTIL-DM-CHOICE                          PIC 9.
+       01  UTIL-SEARCH-NAME                        PIC X(50).
+       01  UTIL-EOF                                PIC X VALUE 'N'.
+
+      *WS STUDENT
+       01  WS-NAME                                 PIC X(50).
+       01  WS-AGE                                  PIC 9(2).
+       01  WS-GENDER                               PIC X(15).
+       01  WS-CONTACT-NUM                          PIC X(12).
+       01  WS-ASSIGNED-DORM-ID                     PIC X(10).
+       01  WS-RENT-AMOUNT-PAID                     PIC X(6).
+       01  WS-ELECTRIC-BILL                        PIC 9(4)V99.
+       01  WS-WIFI-BILL                            PIC 9(4)V99.
+       01  WS-PAYMENT-STATUS                       PIC X(10).
+
+      *WS DORM
+       01  WS-DORM-FLOOR                           PIC X(2).
+       01  WS-DORM-ROOM-NUM                        PIC X(6).
+       01  WS-DORM-RENT-AMOUNT                     PIC X(6).
+       01  WS-DORM-ELECTRICITY                     PIC 9(4)V99.
+       01  WS-DORM-WIFI                            PIC 9(4)V99.
+       01  WS-DORM-STATUS                          PIC X(10).
+       
+       
+      *WS ADD
+       01  WS-ADD-FLAG                             PIC X(2).
 
        PROCEDURE DIVISION.
-           PERFORM STUDENT-MANAGEMENT.
+           PERFORM MAIN-MENU.
            STOP RUN.
+
+
       *============================
       *FUNCTION: MAIN MENU
       *============================
+       MAIN-MENU.
+           PERFORM UNTIL UTIL-MM-CHOICE = 5
+           PERFORM CLEAR-SCREEN
+           DISPLAY "==========================="
+           DISPLAY "         MAIN MENU         "
+           DISPLAY "==========================="
+           DISPLAY "1 - STUDENT MANAGEMENT"
+           DISPLAY "2 - DORM MANAGEMENT"
+           DISPLAY "3 - RECORD PAYMENT"
+           DISPLAY "4 - REPORTS"
+           DISPLAY "5 - EXIT"
+
+           DISPLAY "ENTER CHOICE (1 - 5): "
+           ACCEPT UTIL-MM-CHOICE
+
+           EVALUATE UTIL-MM-CHOICE
+               WHEN 1
+                   PERFORM STUDENT-MANAGEMENT
+
+               WHEN 2
+                   PERFORM DORM-MANAGEMENT
+               WHEN 3
+               
+               WHEN 4
+               
+               WHEN 5
+               
+               WHEN OTHER
+                   DISPLAY "INVALID INPUT, PLEASE TRY AGAIN"
+                   PERFORM EXIT-PROMT
+           END-EVALUATE
+
+           END-PERFORM
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
 
       *============================
       *FUNCTION: DORM MANAGEMENT
       *============================
+       DORM-MANAGEMENT.
+           PERFORM UNTIL UTIL-DM-CHOICE = 5
+           PERFORM CLEAR-SCREEN
+
+           DISPLAY "==========================="
+           DISPLAY "      DORM MANAGEMENT      "
+           DISPLAY "==========================="
+           DISPLAY "1 - ADD DORM"
+           DISPLAY "2 - VIEW DORMS"
+           DISPLAY "3 - EDIT DORM INFO"
+           DISPLAY "4 - DELETE DORMS"
+           DISPLAY "5 - EXIT"
+
+           DISPLAY "ENTER CHOICE (1 - 5): "
+           ACCEPT UTIL-DM-CHOICE
+
+           EVALUATE UTIL-DM-CHOICE
+               WHEN 1
+
+               WHEN 2
+
+               WHEN 3
+
+               WHEN 4
+
+               WHEN 5
+
+               WHEN OTHER
+                   DISPLAY "INVALID INPUT, TRY AGAIN"
+                   PERFORM EXIT-PROMT
+           END-EVALUATE
+           
+           END-PERFORM
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
 
       *============================
       *FUNCTION: STUDENT MANAGEMENT
@@ -42,13 +169,14 @@
            PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
-           DISPLAY "         MAIN MENU         "
+           DISPLAY "    STUDNENT MANAGEMENT    "
            DISPLAY "==========================="
            DISPLAY "1 - ADD STUDENT"
            DISPLAY "2 - VIEW STUDENTS"
            DISPLAY "3 - EDIT STUDENT INFO"
            DISPLAY "4 - DELETE STUDENTS"
            DISPLAY "5 - EXIT"
+
            DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-SM-CHOICE
 
@@ -61,7 +189,6 @@
                    PERFORM CLEAR-SCREEN
                    PERFORM VIEW-STUDENTS
 
-
                WHEN 3
                    PERFORM CLEAR-SCREEN
                    PERFORM EDIT-STUDENTS
@@ -72,6 +199,7 @@
     
                WHEN 5
                    DISPLAY "EXITING PROGRAM..."
+                   PERFORM EXIT-PROMT
     
                WHEN OTHER 
                    DISPLAY "INVALID CHOICE. TRY AGAIN"
@@ -100,7 +228,7 @@
       *=======================
        EXIT-PROMT.
 
-           DISPLAY "Press enter to exit."
+           DISPLAY "Press enter to proceed."
            ACCEPT OMITTED
 
            EXIT PARAGRAPH.
@@ -125,17 +253,15 @@
                     DISPLAY "Age: " ACCEPT WS-AGE
                     DISPLAY "Gender: " ACCEPT WS-GENDER
                     DISPLAY "Contact Number: " ACCEPT WS-CONTACT-NUM
-                    DISPLAY "Religion: " ACCEPT WS-RELIGION
-                    DISPLAY "Assign Room: " ACCEPT WS-ROOM-NUM
-                    DISPLAY "Rent Amount: " ACCEPT WS-RENT-AMOUNT
+                    DISPLAY "Assign Room: " ACCEPT WS-ASSIGNED-DORM-ID
+                    DISPLAY "Rent Amount: " ACCEPT WS-RENT-AMOUNT-PAID
         
                     MOVE WS-NAME TO SI-NAME
                     MOVE WS-AGE TO SI-AGE
                     MOVE WS-GENDER TO SI-GENDER
                     MOVE WS-CONTACT-NUM TO SI-CONTACT-NUM
-                    MOVE WS-RELIGION TO SI-RELIGION
-                    MOVE WS-ROOM-NUM TO SI-ROOM-NUM
-                    MOVE WS-RENT-AMOUNT TO SI-RENT-AMOUNT
+                    MOVE WS-ASSIGNED-DORM-ID TO SI-ROOM-NUM
+                    MOVE WS-RENT-AMOUNT-PAID TO SI-RENT-AMOUNT
         
                     WRITE STUDENT-RECORD
         
@@ -152,32 +278,30 @@
            PERFORM EXIT-PROMT
        EXIT PARAGRAPH.
 
-
       *=======================
       *FUNCTION: VIEW-STUDENTS
       *=======================
        VIEW-STUDENTS.
            
            OPEN INPUT STUDENT-FILE
-           MOVE 1 TO S_C
-           MOVE "N" TO EOF
-                  PERFORM UNTIL EOF = 'Y'
+           
+           MOVE "N" TO UTIL-EOF
+                  PERFORM UNTIL UTIL-EOF = 'Y'
            READ STUDENT-FILE
                AT END
-                   MOVE 'Y' TO EOF
+                   MOVE 'Y' TO UTIL-EOF
                NOT AT END
                    DISPLAY "==============="
-                   DISPLAY "STUDENT #" S_C
+                   DISPLAY "STUDENT #" SI-NAME
                    DISPLAY "==============="
                    DISPLAY "Name: " SI-NAME
                    DISPLAY "Age: " SI-AGE
                    DISPLAY "Gender: " SI-GENDER
                    DISPLAY "Contact Number: " SI-CONTACT-NUM
-                   DISPLAY "Religion: " SI-RELIGION
                    DISPLAY "Assigned Room: " SI-ROOM-NUM
                    DISPLAY "Rent Amount: " SI-RENT-AMOUNT
-                   ADD 1 TO S_C
-                   DISPLAY " "
+                   
+                   DISPLAY SPACE
            END-READ
            END-PERFORM
 
@@ -195,20 +319,20 @@
            DISPLAY "YOU CHOSE TO EDIT STUDENTS"
            
            DISPLAY "Enter a name of the student to edit: "
-           ACCEPT SEARCH-NAME
+           ACCEPT UTIL-SEARCH-NAME
 
            OPEN INPUT STUDENT-FILE
                OUTPUT TEMP-STUDENT-FILE
 
-           MOVE "N" TO EOF
+           MOVE "N" TO UTIL-EOF
 
-           PERFORM UNTIL EOF = "Y"
+           PERFORM UNTIL UTIL-EOF = "Y"
                READ STUDENT-FILE
                    AT END
-                       MOVE "Y" TO EOF
+                       MOVE "Y" TO UTIL-EOF
 
                    NOT AT END
-                       IF SI-NAME = SEARCH-NAME
+                       IF SI-NAME = UTIL-SEARCH-NAME
                            DISPLAY "Editing student: " SI-NAME
 
                        DISPLAY "Edit Name (keep empty to unchange)"
@@ -233,12 +357,6 @@
                            ACCEPT TEMP-CONTACT-NUM
                            IF TEMP-CONTACT-NUM NOT = SPACES
                                MOVE TEMP-CONTACT-NUM TO SI-CONTACT-NUM
-                           END-IF
-
-                       DISPLAY "Edit Religion (keep empty to unchange)"
-                           ACCEPT TEMP-RELIGION
-                           IF TEMP-RELIGION NOT = SPACES
-                               MOVE TEMP-RELIGION TO SI-RELIGION
                            END-IF
 
                        DISPLAY "Edit Room (keep empty to unchange)"
@@ -284,20 +402,20 @@
            DISPLAY "YOU CHOSE TO DELETE STUDENTS"
 
            DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE"
-           ACCEPT SEARCH-NAME
+           ACCEPT UTIL-SEARCH-NAME
 
            OPEN INPUT STUDENT-FILE
                OUTPUT TEMP-STUDENT-FILE
            
-               MOVE "N" TO EOF
+               MOVE "N" TO UTIL-EOF
                    
-               PERFORM UNTIL EOF = "Y"
+               PERFORM UNTIL UTIL-EOF = "Y"
                    READ STUDENT-FILE
                        AT END 
-                            MOVE "Y" TO EOF
+                            MOVE "Y" TO UTIL-EOF
 
                        NOT AT END
-                       IF SI-NAME = SEARCH-NAME
+                       IF SI-NAME = UTIL-SEARCH-NAME
                            DISPLAY "DELETING STUDENT: " SI-NAME
                        ELSE
                            WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
