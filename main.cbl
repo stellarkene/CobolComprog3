@@ -24,13 +24,13 @@
        01  TEST-PRINT      PIC X(10).
 
        PROCEDURE DIVISION.
-           PERFORM MAIN-MENU
+           PERFORM STUDENT-MANAGEMENT.
            STOP RUN.
 
       *===================
       *FUNCTION: MAIN MENU
       *=================== 
-       MAIN-MENU.
+       STUDENT-MANAGEMENT.
            PERFORM UNTIL USER-CHOICE = 5
            PERFORM CLEAR-SCREEN
            

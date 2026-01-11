@@ -6,7 +6,7 @@
            05  SI-CONTACT-NUM          PIC X(12).
            05  SI-RELIGION             PIC X(20).
            05  SI-ROOM-NUM             PIC X(20).
-           05  SI-RENT-AMOUNT          PIC ZZZ,ZZZ.
+           05  SI-RENT-AMOUNT          PIC X(6).
 
 
        FD  TEMP-STUDENT-FILE.
@@ -17,5 +17,5 @@
            05  TEMP-CONTACT-NUM        PIC X(12).
            05  TEMP-RELIGION           PIC X(20).
            05  TEMP-ROOM-NUM           PIC X(20).
-           05  TEMP-RENT-AMOUNT        PIC ZZZ,ZZZ.        
+           05  TEMP-RENT-AMOUNT        PIC X(6).        
            
