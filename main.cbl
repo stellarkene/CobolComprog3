@@ -11,7 +11,10 @@
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
            SELECT DORM-FILE ASSIGN TO "dorm.dat"
--              ORGANIZATION IS LINE SEQUENTIAL.
+-                 ORGANIZATION IS INDEXED
+-                 ACCESS MODE IS DYNAMIC
+-                 RECORD KEY IS DI-ID
+-                 FILE STATUS IS WS-DORM-STATUS.
 
        DATA DIVISION.
        FILE SECTION.
@@ -22,36 +25,36 @@
            05  SI-AGE                              PIC 9(2).
            05  SI-GENDER                           PIC X(15).
            05  SI-CONTACT-NUM                      PIC X(12).
-           05  SI-ROOM-NUM                         PIC X(20).
-           05  SI-RENT-AMOUNT                      PIC X(6).
-           05  SI-ELECTRIC-BILL                    PIC X(7).
-           05  SI-WIFI-BILL                        PIC X(7).
-           05  SI-PAYMENT-STATUS                   PIC X(10).
+           05  SI-ASSIGNED-DORM-ID                 PIC X(20).
+           
 
       *TEMP STUDENT RECORD
        FD  TEMP-STUDENT-FILE.
        01  TEMP-STUDENT-RECORD.
+           05  SI-ID                               PIC X(10).
            05  TEMP-NAME                           PIC X(50).
            05  TEMP-AGE                            PIC 9(2).
            05  TEMP-GENDER                         PIC X(15).         
            05  TEMP-CONTACT-NUM                    PIC X(12).
-           05  TEMP-ROOM-NUM                       PIC X(20).
-           05  TEMP-RENT-AMOUNT                    PIC X(6).
-           05  TEMP-ELECTRIC-BILL                  PIC X(7).
-           05  TEMP-WIFI-BILL                      PIC X(7).
-           05  TEMP-STATUS                         PIC X(10).
+           05  TEMP-ASSIGNED-D-ID                  PIC X(20).
 
       *DORM FILE
            FD DORM-FILE.
        01  DORM-RECORD.
-           05  DI-FLOOR                            PIC X(2).
-           05  DI-ROOM-NUM                         PIC X(6).
-           05  DI-RENT-AMOUNT                      PIC X(6).
-           05  DI-ELECTRICITY                      PIC X(7).
-           05  DI-WIFI                             PIC X(7).
-           05  DI-STATUS                           PIC X(10).
            05  DI-ID                               PIC X(10).
-           05  DI-DATE-PAID                        PIC X(8).
+           05  DI-FLOOR                            PIC X(2).
+           05  DI-ROOM-NUM                         PIC X(3).
+           05  DI-RENT-AMOUNT                      PIC X(6).
+           05  DI-RENT-DUE                         PIC X(10).
+           05  DI-RENT-LAST-PAID                   PIC X(10).
+           05  DI-ELECTRICITY-AMT                  PIC X(7).
+           05  DI-ELECTRICITY-DUE                  PIC X(10).
+           05  DI-ELECTRICITY-LAST                 PIC X(10).
+           05  DI-WIFI-AMT                         PIC X(7).
+           05  DI-WIFI-DUE                         PIC X(10).
+           05  DI-WIFI-LAST-PAID                   PIC X(10).
+           05  DI-STATUS                           PIC X(10).
+
 
       *WS
        WORKING-STORAGE SECTION.
@@ -66,7 +69,12 @@
        01  UTIL-EDIT-AGAIN                         PIC X VALUE "Y".
        01  UTIL-EDIT-FOUND                         PIC X VALUE "N".
        01  UTIL-DELETE-CHOICE                      PIC X VALUE "Y".
-       01  UTIL-DELETE-FOUND                        PIC X VALUE "N".
+       01  UTIL-DELETE-FOUND                       PIC X VALUE "N".
+       01  UTIL-FLOOR-N                            PIC 99.
+       01  UTIL-ROOM-N                             PIC 999.
+                         
+
+
 
 
       *WS STUDENT
@@ -76,19 +84,15 @@
        01  WS-GENDER                               PIC X(15).
        01  WS-CONTACT-NUM                          PIC X(12).
        01  WS-ASSIGNED-DORM-ID                     PIC X(10).
-       01  WS-RENT-AMOUNT-PAID                     PIC X(6).
-       01  WS-ELECTRIC-BILL                        PIC 9(4)V99.
-       01  WS-WIFI-BILL                            PIC 9(4)V99.
-       01  WS-PAYMENT-STATUS                       PIC X(10).
 
       *WS DORM
+       01  WS-DORM-ID                              PIC X(10).
        01  WS-DORM-FLOOR                           PIC X(2).
-       01  WS-DORM-ROOM-NUM                        PIC X(6).
+       01  WS-DORM-ROOM-NUM                        PIC X(3).
        01  WS-DORM-RENT-AMOUNT                     PIC X(6).
        01  WS-DORM-ELECTRICITY                     PIC 9(4)V99.
        01  WS-DORM-WIFI                            PIC 9(4)V99.
        01  WS-DORM-STATUS                          PIC X(10).
-       01  WS-DORM-ID                              PIC X(10).
        01  WS-DORM-DATE-PAID                       PIC X(8).
        
       *WS ADD
@@ -136,7 +140,6 @@
            END-EVALUATE
 
            END-PERFORM
-           PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
       *============================
@@ -173,7 +176,8 @@
                    PERFORM CLEAR-SCREEN
 
                WHEN 5
-                   PERFORM CLEAR-SCREEN
+                   DISPLAY "EXITING DORM MANAGEMENT..."
+                   PERFORM EXIT-PROMT
 
                WHEN OTHER
                    DISPLAY "INVALID INPUT, TRY AGAIN"
@@ -181,7 +185,6 @@
            END-EVALUATE
            
            END-PERFORM
-           PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
       *============================
@@ -189,39 +192,69 @@
       *============================
        ADD-DORM.
            DISPLAY "YOU CHOSE TO ADD DORM"
-           DISPLAY "ADD DORM? (Y/N)"
+           
+           *> Ask if user wants to add dorm
+           DISPLAY "ADD DORM? (Y/N): "
            ACCEPT WS-ADD-FLAG
-
            PERFORM CONVERT-FLAG
-
+       
+           *> Validate input
+           PERFORM UNTIL WS-ADD-FLAG = "Y" OR WS-ADD-FLAG = "N"
+               DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
+               ACCEPT WS-ADD-FLAG
+               PERFORM CONVERT-FLAG
+           END-PERFORM
+       
            IF WS-ADD-FLAG = "Y"
-               OPEN EXTEND DORM-FILE
+               OPEN I-O DORM-FILE   
+       
                PERFORM UNTIL WS-ADD-FLAG = "N"
+       
                    DISPLAY "PLEASE ENTER DORM ROOM FLOOR: "
-                   ACCEPT WS-DORM-FLOOR
-
+                   ACCEPT UTIL-FLOOR-N
+       
                    DISPLAY "PLEASE ENTER DORM ROOM NUMBER: "
-                   ACCEPT WS-DORM-ROOM-NUM
-
+                   ACCEPT UTIL-ROOM-N
+       
                    DISPLAY "PLEASE ENTER RENT AMOUNT: "
                    ACCEPT WS-DORM-RENT-AMOUNT
-
-                   MOVE WS-DORM-FLOOR TO DI-FLOOR
-                   MOVE WS-DORM-ROOM-NUM TO DI-ROOM-NUM
+       
+       
+                   *> ----------------------------
+                   *> Move to record and write
+                   *> ----------------------------
+                   MOVE WS-DORM-ID          TO DI-ID
+                   MOVE WS-DORM-FLOOR       TO DI-FLOOR
+                   MOVE WS-DORM-ROOM-NUM    TO DI-ROOM-NUM
                    MOVE WS-DORM-RENT-AMOUNT TO DI-RENT-AMOUNT
-
+                   MOVE "UNOCCUPIED"       TO DI-STATUS
+       
                    WRITE DORM-RECORD
-
+       
+                   *> ----------------------------
+                   *> Ask if user wants to add another dorm
+                   *> ----------------------------
                    DISPLAY "ADD ANOTHER? (Y/N):"
                    ACCEPT WS-ADD-FLAG
                    PERFORM CONVERT-FLAG
+       
+                   *> Validate input
+                   PERFORM UNTIL WS-ADD-FLAG = "Y" OR WS-ADD-FLAG = "N"
+                       DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
+                       ACCEPT WS-ADD-FLAG
+                       PERFORM CONVERT-FLAG
+                   END-PERFORM
+       
                END-PERFORM
+       
                CLOSE DORM-FILE
            END-IF
-
+       
+           DISPLAY "Dorm records saved successfully!"
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
+       
       *============================
       *FUNCTION: ADD DORM 
       *============================
@@ -236,16 +269,32 @@
                    AT END
                        MOVE "Y" TO UTIL-EOF
                    NOT AT END
-                       DISPLAY "========================"
-                       DISPLAY "DORM ID: " DI-ID
-                       DISPLAY "========================"
-                       DISPLAY "Floor: " DI-FLOOR
-                       DISPLAY "Room Number: " DI-ROOM-NUM
-                       DISPLAY "Rent Amount: " DI-RENT-AMOUNT
-                       DISPLAY "Electricity: " DI-ELECTRICITY
-                       DISPLAY "WiFi: " DI-WIFI
-                       DISPLAY "Status: " DI-STATUS
-                       DISPLAY "Date Paid: " DI-DATE-PAID
+                       DISPLAY "======================================="
+                       DISPLAY "           Dorm ID: " DI-ID
+                       DISPLAY "======================================="
+                       DISPLAY "Floor          : " DI-FLOOR
+                       DISPLAY "Room Number    : " DI-ROOM-NUM
+                       DISPLAY "Status         : " DI-STATUS
+                       DISPLAY "---------------------------------------"
+                       
+                       DISPLAY "RENT"
+                       DISPLAY "  Amount       : " DI-RENT-AMOUNT
+                       DISPLAY "  Due Date     : " DI-RENT-DUE
+                       DISPLAY "  Last Paid    : " DI-RENT-LAST-PAID
+                       DISPLAY "---------------------------------------"
+                       
+                       DISPLAY "ELECTRICITY"
+                       DISPLAY "  Amount       : " DI-ELECTRICITY-AMT
+                       DISPLAY "  Due Date     : " DI-ELECTRICITY-DUE
+                       DISPLAY "  Last Paid    : " DI-ELECTRICITY-LAST
+                       DISPLAY "---------------------------------------"
+                       
+                       DISPLAY "WIFI"
+                       DISPLAY "  Amount       : " DI-WIFI-AMT
+                       DISPLAY "  Due Date     : " DI-WIFI-DUE
+                       DISPLAY "  Last Paid    : " DI-WIFI-LAST-PAID
+                       DISPLAY "======================================="
+                       
                        DISPLAY SPACE
                END-READ
            END-PERFORM
@@ -292,7 +341,7 @@
                    PERFORM DELETE-STUDENTS
     
                WHEN 5
-                   DISPLAY "EXITING PROGRAM..."
+                   DISPLAY "EXITING STUDENT MANAGEMENT..."
                    PERFORM EXIT-PROMT
     
                WHEN OTHER 
@@ -335,14 +384,17 @@
            DISPLAY "ADD STUDENT? (Y/N): "
            ACCEPT WS-ADD-FLAG
            PERFORM CONVERT-FLAG
-
-               IF WS-ADD-FLAG = "Y"
-                OPEN EXTEND STUDENT-FILE
-        
-                PERFORM UNTIL WS-ADD-FLAG = "N"
-                    DISPLAY "==============="
-                    DISPLAY "ADD STUDENT"
-                    DISPLAY "==============="
+       
+           IF WS-ADD-FLAG = "Y"
+               *> Open files once
+               OPEN EXTEND STUDENT-FILE
+               OPEN I-O DORM-FILE   *> Indexed, allows REWRITE
+       
+               PERFORM UNTIL WS-ADD-FLAG = "N"
+       
+                   DISPLAY "==============="
+                   DISPLAY "ADD STUDENT"
+                   DISPLAY "==============="
                     DISPLAY "Name: " ACCEPT WS-NAME
                     DISPLAY "Age: " ACCEPT WS-AGE
                     DISPLAY "Gender: " ACCEPT WS-GENDER
@@ -356,21 +408,27 @@
                     MOVE WS-CONTACT-NUM TO SI-CONTACT-NUM
                     MOVE WS-ASSIGNED-DORM-ID TO SI-ROOM-NUM
                     MOVE WS-RENT-AMOUNT-PAID TO SI-RENT-AMOUNT
-        
-                    WRITE STUDENT-RECORD
-        
-                    DISPLAY "ADD ANOTHER? (Y/N):"
-                    ACCEPT WS-ADD-FLAG
-                    PERFORM CONVERT-FLAG
-
-                END-PERFORM
-        
-                CLOSE STUDENT-FILE
-               END-IF
-        
+       
+                   WRITE STUDENT-RECORD
+       
+                   DISPLAY "ADD ANOTHER? (Y/N):"
+                   ACCEPT WS-ADD-FLAG
+                   PERFORM CONVERT-FLAG
+       
+               END-PERFORM
+       
+               CLOSE STUDENT-FILE
+               CLOSE DORM-FILE
+       
+           END-IF
+       
            DISPLAY "Students saved successfully!"
            PERFORM EXIT-PROMT
-       EXIT PARAGRAPH.
+           EXIT PARAGRAPH.
+       
+       
+       
+       
 
       *=======================
       *FUNCTION: VIEW-STUDENTS
@@ -386,14 +444,13 @@
                    MOVE 'Y' TO UTIL-EOF
                NOT AT END
                    DISPLAY "==============="
-                   DISPLAY "STUDENT #" SI-NAME
+                   DISPLAY "STUDENT ID: " SI-NAME *> NO STUDENT ID YET
                    DISPLAY "==============="
                    DISPLAY "Name: " SI-NAME
                    DISPLAY "Age: " SI-AGE
                    DISPLAY "Gender: " SI-GENDER
                    DISPLAY "Contact Number: " SI-CONTACT-NUM
-                   DISPLAY "Assigned Room: " SI-ROOM-NUM
-                   DISPLAY "Rent Amount: " SI-RENT-AMOUNT
+                   DISPLAY "Assigned Room: " SI-ASSIGNED-DORM-ID
                    
                    DISPLAY SPACE
            END-READ
@@ -465,17 +522,12 @@
        
                            DISPLAY "Edit Room"
                            DISPLAY "(keep empty to unchange)"
-                           ACCEPT TEMP-ROOM-NUM
-                           IF TEMP-ROOM-NUM NOT = SPACES
-                               MOVE TEMP-ROOM-NUM TO SI-ROOM-NUM
+                           ACCEPT TEMP-ASSIGNED-D-ID
+                           IF TEMP-ASSIGNED-D-ID NOT = SPACES
+                               MOVE TEMP-ASSIGNED-D-ID 
+-                                  TO SI-ASSIGNED-DORM-ID
                            END-IF
        
-                           DISPLAY "Edit Rent"
-                           DISPLAY "(keep empty to unchange)"
-                           ACCEPT TEMP-RENT-AMOUNT
-                           IF TEMP-RENT-AMOUNT NOT = SPACES
-                               MOVE TEMP-RENT-AMOUNT TO SI-RENT-AMOUNT
-                           END-IF
                        END-IF
        
                        WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
@@ -581,3 +633,27 @@
            END-IF
            EXIT PARAGRAPH.
            
+       DISPLAY-AVAILABLE-DORMS.
+           MOVE "N" TO UTIL-EOF
+       
+           DISPLAY "============================="
+           DISPLAY "AVAILABLE DORMS"
+           DISPLAY "============================="
+           DISPLAY "   ID    Floor   Room"
+       
+           PERFORM UNTIL UTIL-EOF = "Y"
+           READ DORM-FILE
+               NEXT RECORD
+               AT END
+                   MOVE "Y" TO UTIL-EOF
+               NOT AT END
+                   IF DI-STATUS = "UNOCCUPIED"
+                       DISPLAY DI-ID "     " DI-FLOOR "    " DI-ROOM-NUM
+                   END-IF
+           END-READ
+           END-PERFORM
+       
+           DISPLAY "============================="
+           EXIT PARAGRAPH.
+       
+       
