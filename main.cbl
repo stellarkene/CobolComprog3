@@ -4,10 +4,10 @@
        ENVIRONMENT DIVISION.
            INPUT-OUTPUT SECTION.
                FILE-CONTROL.
-           SELECT STUDENT-FILE ASSIGN TO "students.dat"
+           SELECT TENANT-FILE ASSIGN TO "TENANTs.dat"
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
-           SELECT TEMP-STUDENT-FILE ASSIGN TO "temp.dat"
+           SELECT TEMP-TENANT-FILE ASSIGN TO "temp.dat"
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
            SELECT DORM-FILE ASSIGN TO "dorm.dat"
@@ -18,9 +18,9 @@
 
        DATA DIVISION.
        FILE SECTION.
-      *STUDENT RECORD
-           FD  STUDENT-FILE.
-       01  STUDENT-RECORD.
+      *TENANT RECORD
+           FD  TENANT-FILE.
+       01  TENANT-RECORD.
            05  SI-NAME                             PIC X(50).
            05  SI-AGE                              PIC 9(2).
            05  SI-GENDER                           PIC X(15).
@@ -28,9 +28,9 @@
            05  SI-ASSIGNED-D-ID                    PIC X(20).
            
 
-      *TEMP STUDENT RECORD
-       FD  TEMP-STUDENT-FILE.
-       01  TEMP-STUDENT-RECORD.
+      *TEMP TENANT RECORD
+       FD  TEMP-TENANT-FILE.
+       01  TEMP-TENANT-RECORD.
            05  SI-ID                               PIC X(10).
            05  TEMP-NAME                           PIC X(50).
            05  TEMP-AGE                            PIC 9(2).
@@ -83,8 +83,8 @@
 
 
 
-      *WS STUDENT
-       01  WS-STUDENT-ID                           PIC X(10).
+      *WS TENANT
+       01  WS-TENANT-ID                           PIC X(10).
        01  WS-NAME                                 PIC X(50).
        01  WS-AGE                                  PIC 9(2).
        01  WS-GENDER                               PIC X(15).
@@ -145,7 +145,7 @@
            DISPLAY "==========================="
            DISPLAY "         MAIN MENU         "
            DISPLAY "==========================="
-           DISPLAY "1 - STUDENT MANAGEMENT"
+           DISPLAY "1 - TENANT MANAGEMENT"
            DISPLAY "2 - DORM MANAGEMENT"
            DISPLAY "3 - RECORD PAYMENT"
            DISPLAY "4 - EXIT"
@@ -156,7 +156,7 @@
            EVALUATE UTIL-MM-CHOICE
                WHEN 1
                    MOVE 0 TO UTIL-SM-CHOICE
-                   PERFORM STUDENT-MANAGEMENT
+                   PERFORM TENANT-MANAGEMENT
 
                WHEN 2
                    MOVE 0 TO UTIL-DM-CHOICE
@@ -982,19 +982,19 @@
            EXIT PARAGRAPH.
 
       *============================
-      *FUNCTION: STUDENT MANAGEMENT
+      *FUNCTION: TENANT MANAGEMENT
       *============================
-       STUDENT-MANAGEMENT.
+       TENANT-MANAGEMENT.
            PERFORM UNTIL UTIL-SM-CHOICE = 5
            PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
            DISPLAY "    STUDNENT MANAGEMENT    "
            DISPLAY "==========================="
-           DISPLAY "1 - ADD STUDENT"
-           DISPLAY "2 - VIEW STUDENTS"
-           DISPLAY "3 - EDIT STUDENT INFO"
-           DISPLAY "4 - DELETE STUDENTS"
+           DISPLAY "1 - ADD TENANT"
+           DISPLAY "2 - VIEW TENANTS"
+           DISPLAY "3 - EDIT TENANT INFO"
+           DISPLAY "4 - DELETE TENANTS"
            DISPLAY "5 - EXIT"
 
            DISPLAY "ENTER CHOICE (1 - 5): "
@@ -1003,22 +1003,22 @@
            EVALUATE UTIL-SM-CHOICE
                WHEN 1
                    PERFORM CLEAR-SCREEN
-                   PERFORM ADD-STUDENT
+                   PERFORM ADD-TENANT
     
                WHEN 2
                    PERFORM CLEAR-SCREEN
-                   PERFORM VIEW-STUDENTS
+                   PERFORM VIEW-TENANTS
 
                WHEN 3
                    PERFORM CLEAR-SCREEN
-                   PERFORM EDIT-STUDENTS
+                   PERFORM EDIT-TENANTS
     
                WHEN 4
                    PERFORM CLEAR-SCREEN
-                   PERFORM DELETE-STUDENTS
+                   PERFORM DELETE-TENANTS
     
                WHEN 5
-                   DISPLAY "EXITING STUDENT MANAGEMENT..."
+                   DISPLAY "EXITING TENANT MANAGEMENT..."
                    PERFORM EXIT-PROMT
     
                WHEN OTHER 
@@ -1031,23 +1031,23 @@
       
 
       *=====================
-      *FUNCTION: ADD-STUDENT
+      *FUNCTION: ADD-TENANT
       *=====================
-       ADD-STUDENT.
-           DISPLAY "YOU CHOSE TO ADD STUDENT"
-           DISPLAY "ADD STUDENT? (Y/N): "
+       ADD-TENANT.
+           DISPLAY "YOU CHOSE TO ADD TENANT"
+           DISPLAY "ADD TENANT? (Y/N): "
            ACCEPT WS-ADD-FLAG
            PERFORM CONVERT-FLAG
        
            IF WS-ADD-FLAG = "Y"
                *> Open files once
-               OPEN EXTEND STUDENT-FILE *>Line sequential
+               OPEN EXTEND TENANT-FILE *>Line sequential
                OPEN I-O DORM-FILE   *> Indexed
        
                PERFORM UNTIL WS-ADD-FLAG = "N"
        
                    DISPLAY "==============="
-                   DISPLAY "ADD STUDENT"
+                   DISPLAY "ADD TENANT"
                    DISPLAY "==============="
        
                    
@@ -1080,11 +1080,11 @@
                    *> Check if there are available rooms
                    IF WS-AVAILABLE-ROOM-COUNT = 0
                        DISPLAY "NO AVAILABLE ROOMS. "
-                               "CANNOT ADD STUDENT."
+                               "CANNOT ADD TENANT."
                        MOVE "N" TO WS-ADD-FLAG
                    ELSE
                        
-                       *> Get student information
+                       *> Get TENANT information
                        DISPLAY "Name: " WITH NO ADVANCING
                        ACCEPT WS-NAME
                        DISPLAY "Age: " WITH NO ADVANCING
@@ -1110,7 +1110,7 @@
                            
                            
                            IF WS-ASSIGNED-D-ID = "EXIT"
-                               DISPLAY "STUDENT ADDITION CANCELLED."
+                               DISPLAY "TENANT ADDITION CANCELLED."
                                MOVE "Y" TO WS-VALID-ROOM-FLAG
                                MOVE "Y" TO WS-CANCEL-FLAG
                            ELSE
@@ -1138,7 +1138,7 @@
                            END-IF
                        END-PERFORM
            
-                       *> Only write student if not cancelled
+                       *> Only write TENANT if not cancelled
                        IF WS-CANCEL-FLAG = "N"
                            
                            MOVE WS-NAME             TO SI-NAME
@@ -1148,7 +1148,7 @@
                            MOVE WS-ASSIGNED-D-ID    TO SI-ASSIGNED-D-ID
                           
                
-                           WRITE STUDENT-RECORD
+                           WRITE TENANT-RECORD
                
                            
                            MOVE WS-ASSIGNED-D-ID TO DI-ID
@@ -1162,7 +1162,7 @@
                                        DISPLAY "ERROR REWRITING "
                                                "DORM RECORD"
                                    NOT INVALID KEY
-                                       DISPLAY "STUDENT ADDED AND "
+                                       DISPLAY "TENANT ADDED AND "
                                                "ROOM " 
                                                WS-ASSIGNED-D-ID 
                                                " MARKED AS OCCUPIED!"
@@ -1179,7 +1179,7 @@
        
                END-PERFORM
        
-               CLOSE STUDENT-FILE
+               CLOSE TENANT-FILE
                CLOSE DORM-FILE
        
            END-IF
@@ -1192,20 +1192,20 @@
        
 
       *=======================
-      *FUNCTION: VIEW-STUDENTS
+      *FUNCTION: VIEW-TENANTS
       *=======================
-       VIEW-STUDENTS.
+       VIEW-TENANTS.
            
-           OPEN INPUT STUDENT-FILE
+           OPEN INPUT TENANT-FILE
            
            MOVE "N" TO UTIL-EOF
                   PERFORM UNTIL UTIL-EOF = 'Y'
-           READ STUDENT-FILE
+           READ TENANT-FILE
                AT END
                    MOVE 'Y' TO UTIL-EOF
                NOT AT END
                    DISPLAY "==============="
-                   DISPLAY "STUDENT ID: " SI-NAME *> NO STUDENT ID YET
+                   DISPLAY "TENANT ID: " SI-NAME *> NO TENANT ID YET
                    DISPLAY "==============="
                    DISPLAY "Name: " SI-NAME
                    DISPLAY "Age: " SI-AGE
@@ -1217,17 +1217,17 @@
            END-READ
            END-PERFORM
 
-           CLOSE STUDENT-FILE
+           CLOSE TENANT-FILE
            
            PERFORM EXIT-PROMT
 
            EXIT PARAGRAPH.
 
       *=======================
-      *FUNCTION: EDIT-STUDENTS
+      *FUNCTION: EDIT-TENANTS
       *=======================
-       EDIT-STUDENTS.
-           DISPLAY "YOU CHOSE TO EDIT STUDENTS"
+       EDIT-TENANTS.
+           DISPLAY "YOU CHOSE TO EDIT TENANTS"
        
            MOVE "Y" TO UTIL-EDIT-AGAIN
        
@@ -1235,23 +1235,23 @@
        
                MOVE "N" TO UTIL-EDIT-FOUND
        
-               DISPLAY "Enter name of the student to edit: "
+               DISPLAY "Enter name of the TENANT to edit: "
                ACCEPT UTIL-SEARCH-NAME
        
-               OPEN INPUT STUDENT-FILE
-                    OUTPUT TEMP-STUDENT-FILE
+               OPEN INPUT TENANT-FILE
+                    OUTPUT TEMP-TENANT-FILE
        
                MOVE "N" TO UTIL-EOF
        
                PERFORM UNTIL UTIL-EOF = "Y"
-                   READ STUDENT-FILE
+                   READ TENANT-FILE
                        AT END
                            MOVE "Y" TO UTIL-EOF
        
                        NOT AT END
                        IF SI-NAME = UTIL-SEARCH-NAME
                            MOVE "Y" TO UTIL-EDIT-FOUND
-                           DISPLAY "Editing student: " SI-NAME
+                           DISPLAY "Editing TENANT: " SI-NAME
        
                            DISPLAY "Edit Name"
                            DISPLAY "(keep empty to unchange)"
@@ -1291,21 +1291,21 @@
        
                        END-IF
        
-                       WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
+                       WRITE TEMP-TENANT-RECORD FROM TENANT-RECORD
                    END-READ
                END-PERFORM
        
-               CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+               CLOSE TENANT-FILE TEMP-TENANT-FILE
        
-               PERFORM SAVE-STUDENT-RECORD
+               PERFORM SAVE-TENANT-RECORD
        
                IF UTIL-EDIT-FOUND = "N"
-                   DISPLAY "Student not found."
+                   DISPLAY "TENANT not found."
                ELSE
-                   DISPLAY "Student record updated."
+                   DISPLAY "TENANT record updated."
                END-IF
        
-               DISPLAY "Edit another student? (Y/N): "
+               DISPLAY "Edit another TENANT? (Y/N): "
                ACCEPT UTIL-EDIT-AGAIN
        
            END-PERFORM
@@ -1315,47 +1315,47 @@
        
              
       *=========================
-      *FUNCTION: DELETE-STUDENTS
+      *FUNCTION: DELETE-TENANTS
       *=========================
-       DELETE-STUDENTS.
+       DELETE-TENANTS.
            MOVE "Y" TO UTIL-DELETE-CHOICE
 
            PERFORM UNTIL UTIL-DELETE-CHOICE = "N"
 
-               DISPLAY "YOU CHOSE TO DELETE STUDENTS"
-               DISPLAY "PLEASE ENTER THE NAME OF THE STUDENT TO DELETE:"
+               DISPLAY "YOU CHOSE TO DELETE TENANTS"
+               DISPLAY "PLEASE ENTER THE NAME OF THE TENANT TO DELETE:"
                ACCEPT UTIL-SEARCH-NAME
 
                MOVE "N" TO UTIL-EOF
                MOVE "N" TO UTIL-DELETE-FOUND
 
-               OPEN INPUT STUDENT-FILE
-                    OUTPUT TEMP-STUDENT-FILE
+               OPEN INPUT TENANT-FILE
+                    OUTPUT TEMP-TENANT-FILE
 
                PERFORM UNTIL UTIL-EOF = "Y"
-               READ STUDENT-FILE
+               READ TENANT-FILE
                    AT END
                        MOVE "Y" TO UTIL-EOF
                    NOT AT END
                        IF SI-NAME = UTIL-SEARCH-NAME
-                           DISPLAY "DELETING STUDENT: " SI-NAME
+                           DISPLAY "DELETING TENANT: " SI-NAME
                            MOVE "Y" TO UTIL-DELETE-FOUND
                        ELSE
-                           WRITE TEMP-STUDENT-RECORD FROM STUDENT-RECORD
+                           WRITE TEMP-TENANT-RECORD FROM TENANT-RECORD
                        END-IF
                END-READ
                END-PERFORM
 
-               CLOSE STUDENT-FILE TEMP-STUDENT-FILE
+               CLOSE TENANT-FILE TEMP-TENANT-FILE
 
                IF UTIL-DELETE-FOUND = "Y"
-                   PERFORM SAVE-STUDENT-RECORD
-                   DISPLAY "STUDENT SUCCESSFULLY DELETED."
+                   PERFORM SAVE-TENANT-RECORD
+                   DISPLAY "TENANT SUCCESSFULLY DELETED."
                ELSE
-                   DISPLAY "STUDENT NOT FOUND."
+                   DISPLAY "TENANT NOT FOUND."
                END-IF
 
-               DISPLAY "DELETE ANOTHER STUDENT? (Y/N): "
+               DISPLAY "DELETE ANOTHER TENANT? (Y/N): "
                ACCEPT UTIL-DELETE-CHOICE
 
                IF UTIL-DELETE-CHOICE NOT = "Y"
@@ -1408,18 +1408,18 @@
 
        
       *============================
-      *FUNCTION: UTILITIES OS SAVE STUDENT RECORD 
+      *FUNCTION: UTILITIES OS SAVE TENANT RECORD 
       *============================
-       SAVE-STUDENT-RECORD.
+       SAVE-TENANT-RECORD.
            ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
 
            IF UTIL-OS-NAME = "Windows_NT"
-               CALL "SYSTEM" USING "del students.dat"
-               CALL "SYSTEM" USING "rename temp.dat students.dat"
+               CALL "SYSTEM" USING "del TENANTs.dat"
+               CALL "SYSTEM" USING "rename temp.dat TENANTs.dat"
 
            ELSE
-               CALL "SYSTEM" USING "rm students.dat"
-               CALL "SYSTEM" USING "mv temp.dat students.dat"
+               CALL "SYSTEM" USING "rm TENANTs.dat"
+               CALL "SYSTEM" USING "mv temp.dat TENANTs.dat"
 
            END-IF
            EXIT PARAGRAPH.
