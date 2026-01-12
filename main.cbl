@@ -14,7 +14,7 @@
 -                 ORGANIZATION IS INDEXED
 -                 ACCESS MODE IS DYNAMIC
 -                 RECORD KEY IS DI-ID
--                 FILE STATUS IS WS-DORM-STATUS.
+-                 FILE STATUS IS WS-DORM-FILE-STATUS.
 
        DATA DIVISION.
        FILE SECTION.
@@ -25,7 +25,7 @@
            05  SI-AGE                              PIC 9(2).
            05  SI-GENDER                           PIC X(15).
            05  SI-CONTACT-NUM                      PIC X(12).
-           05  SI-ASSIGNED-DORM-ID                 PIC X(20).
+           05  SI-ASSIGNED-D-ID                    PIC X(20).
            
 
       *TEMP STUDENT RECORD
@@ -83,7 +83,9 @@
        01  WS-AGE                                  PIC 9(2).
        01  WS-GENDER                               PIC X(15).
        01  WS-CONTACT-NUM                          PIC X(12).
-       01  WS-ASSIGNED-DORM-ID                     PIC X(10).
+       01  WS-ASSIGNED-D-ID                        PIC X(10).
+       01  WS-RENT-AMOUNT-PAID                     PIC X(6).
+       
 
       *WS DORM
        01  WS-DORM-ID                              PIC X(10).
@@ -94,9 +96,14 @@
        01  WS-DORM-WIFI                            PIC 9(4)V99.
        01  WS-DORM-STATUS                          PIC X(10).
        01  WS-DORM-DATE-PAID                       PIC X(8).
+       01  WS-VALID-ROOM-FLAG                      PIC X VALUE "N".
+       01  WS-DORM-FILE-STATUS                     PIC XX.
+
        
       *WS ADD
        01  WS-ADD-FLAG                             PIC X(2).
+       01 WS-AVAILABLE-ROOM-COUNT                  PIC 9(4) VALUE 0.
+       01 WS-CANCEL-FLAG                           PIC X VALUE "N".
 
        PROCEDURE DIVISION.
            PERFORM MAIN-MENU.
@@ -107,8 +114,10 @@
       *FUNCTION: MAIN MENU
       *============================
        MAIN-MENU.
+           
            PERFORM UNTIL UTIL-MM-CHOICE = 5
            PERFORM CLEAR-SCREEN
+           MOVE 0 TO UTIL-MM-CHOICE
            DISPLAY "==========================="
            DISPLAY "         MAIN MENU         "
            DISPLAY "==========================="
@@ -210,26 +219,50 @@
        
                PERFORM UNTIL WS-ADD-FLAG = "N"
        
-                   DISPLAY "PLEASE ENTER DORM ROOM FLOOR: "
+                   DISPLAY "PLEASE ENTER DORM ROOM FLOOR (e.g., 01): "
                    ACCEPT UTIL-FLOOR-N
        
-                   DISPLAY "PLEASE ENTER DORM ROOM NUMBER: "
+                   DISPLAY "PLEASE ENTER DORM ROOM NUMBER (e.g., 001): "
                    ACCEPT UTIL-ROOM-N
        
                    DISPLAY "PLEASE ENTER RENT AMOUNT: "
                    ACCEPT WS-DORM-RENT-AMOUNT
        
+                   *> ----------------------------
+                   *> Generate unique ID (Format: F01-R001)
+                   *> ----------------------------
+                   STRING "F" DELIMITED BY SIZE
+                          UTIL-FLOOR-N DELIMITED BY SIZE
+                          "-R" DELIMITED BY SIZE
+                          UTIL-ROOM-N DELIMITED BY SIZE
+                          INTO WS-DORM-ID
+                   END-STRING
        
                    *> ----------------------------
-                   *> Move to record and write
+                   *> Check if ID already exists
                    *> ----------------------------
-                   MOVE WS-DORM-ID          TO DI-ID
-                   MOVE WS-DORM-FLOOR       TO DI-FLOOR
-                   MOVE WS-DORM-ROOM-NUM    TO DI-ROOM-NUM
-                   MOVE WS-DORM-RENT-AMOUNT TO DI-RENT-AMOUNT
-                   MOVE "UNOCCUPIED"       TO DI-STATUS
+                   MOVE WS-DORM-ID TO DI-ID
+                   READ DORM-FILE
+                       INVALID KEY
+                           *> Room doesn't exist, proceed with write
+                           MOVE WS-DORM-ID          TO DI-ID
+                           MOVE UTIL-FLOOR-N        TO DI-FLOOR
+                           MOVE UTIL-ROOM-N         TO DI-ROOM-NUM
+                           MOVE WS-DORM-RENT-AMOUNT TO DI-RENT-AMOUNT
+                           MOVE "UNOCCUPIED"        TO DI-STATUS
        
-                   WRITE DORM-RECORD
+                           WRITE DORM-RECORD
+                               INVALID KEY
+                                   DISPLAY "ERROR WRITING RECORD"
+                               NOT INVALID KEY
+                                   DISPLAY "DORM " WS-DORM-ID 
+                                           " ADDED SUCCESSFULLY!"
+                           END-WRITE
+                       NOT INVALID KEY
+                           *> Room already exists
+                           DISPLAY "ERROR: DORM " WS-DORM-ID 
+                                   " ALREADY EXISTS!"
+                   END-READ
        
                    *> ----------------------------
                    *> Ask if user wants to add another dorm
@@ -395,25 +428,141 @@
                    DISPLAY "==============="
                    DISPLAY "ADD STUDENT"
                    DISPLAY "==============="
-                    DISPLAY "Name: " ACCEPT WS-NAME
-                    DISPLAY "Age: " ACCEPT WS-AGE
-                    DISPLAY "Gender: " ACCEPT WS-GENDER
-                    DISPLAY "Contact Number: " ACCEPT WS-CONTACT-NUM
-                    DISPLAY "Assign Room: " ACCEPT WS-ASSIGNED-DORM-ID
-                    DISPLAY "Rent Amount: " ACCEPT WS-RENT-AMOUNT-PAID
-        
-                    MOVE WS-NAME TO SI-NAME
-                    MOVE WS-AGE TO SI-AGE
-                    MOVE WS-GENDER TO SI-GENDER
-                    MOVE WS-CONTACT-NUM TO SI-CONTACT-NUM
-                    MOVE WS-ASSIGNED-DORM-ID TO SI-ROOM-NUM
-                    MOVE WS-RENT-AMOUNT-PAID TO SI-RENT-AMOUNT
        
-                   WRITE STUDENT-RECORD
+                   *> ----------------------------
+                   *> Display available rooms
+                   *> ----------------------------
+                   DISPLAY " "
+                   DISPLAY "AVAILABLE ROOMS:"
+                   DISPLAY "----------------"
+                   MOVE LOW-VALUES TO DI-ID
+                   MOVE 0 TO WS-AVAILABLE-ROOM-COUNT
+                   START DORM-FILE KEY >= DI-ID
+                       INVALID KEY
+                           DISPLAY "NO ROOMS IN SYSTEM"
+                   END-START
        
-                   DISPLAY "ADD ANOTHER? (Y/N):"
-                   ACCEPT WS-ADD-FLAG
-                   PERFORM CONVERT-FLAG
+                   PERFORM UNTIL WS-DORM-FILE-STATUS NOT = "00"
+                       READ DORM-FILE NEXT
+                           AT END
+                               CONTINUE
+                           NOT AT END
+                               IF DI-STATUS = "UNOCCUPIED"
+                                   DISPLAY "ROOM: " DI-ID 
+                                           " | FLOOR: " DI-FLOOR
+                                           " | RENT: " DI-RENT-AMOUNT
+                                   ADD 1 TO WS-AVAILABLE-ROOM-COUNT
+                               END-IF
+                       END-READ
+                   END-PERFORM
+                   DISPLAY "----------------"
+                   DISPLAY " "
+       
+                   *> Check if there are available rooms
+                   IF WS-AVAILABLE-ROOM-COUNT = 0
+                       DISPLAY "NO AVAILABLE ROOMS. "
+                               "CANNOT ADD STUDENT."
+                       MOVE "N" TO WS-ADD-FLAG
+                   ELSE
+                       *> ----------------------------
+                       *> Get student information
+                       *> ----------------------------
+                       DISPLAY "Name: " WITH NO ADVANCING
+                       ACCEPT WS-NAME
+                       DISPLAY "Age: " WITH NO ADVANCING
+                       ACCEPT WS-AGE
+                       DISPLAY "Gender: " WITH NO ADVANCING
+                       ACCEPT WS-GENDER
+                       DISPLAY "Contact Number: " WITH NO ADVANCING
+                       ACCEPT WS-CONTACT-NUM
+           
+                       *> ----------------------------
+                       *> Room assignment with validation
+                       *> ----------------------------
+                       MOVE "N" TO WS-VALID-ROOM-FLAG
+                       MOVE "N" TO WS-CANCEL-FLAG
+                       PERFORM UNTIL WS-VALID-ROOM-FLAG = "Y"
+                           DISPLAY "Assign Room (type EXIT to cancel): " 
+                                   WITH NO ADVANCING
+                           ACCEPT WS-ASSIGNED-D-ID
+                           
+                           *> Convert to uppercase for comparison
+                           INSPECT WS-ASSIGNED-D-ID 
+                               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           
+                           *> Check if user wants to exit
+                           IF WS-ASSIGNED-D-ID = "EXIT"
+                               DISPLAY "STUDENT ADDITION CANCELLED."
+                               MOVE "Y" TO WS-VALID-ROOM-FLAG
+                               MOVE "Y" TO WS-CANCEL-FLAG
+                           ELSE
+                               *> Check if room exists and is available
+                               MOVE WS-ASSIGNED-D-ID TO DI-ID
+                               READ DORM-FILE
+                               INVALID KEY
+                                   DISPLAY "ERROR: ROOM " 
+                                           WS-ASSIGNED-D-ID
+                                           " DOES NOT EXIST. "
+                                           "TRY AGAIN."
+                               NOT INVALID KEY
+                                   IF DI-STATUS = "OCCUPIED"
+                                       DISPLAY "ERROR: ROOM " 
+                                               WS-ASSIGNED-D-ID
+                                               " IS ALREADY "
+                                               "OCCUPIED. TRY AGAIN."
+                                   ELSE
+                                       MOVE "Y" TO 
+                                            WS-VALID-ROOM-FLAG
+                                       MOVE DI-RENT-AMOUNT 
+                                            TO WS-RENT-AMOUNT-PAID
+                                   END-IF
+                               END-READ
+                           END-IF
+                       END-PERFORM
+           
+                       *> Only write student if not cancelled
+                       IF WS-CANCEL-FLAG = "N"
+                           *> ----------------------------
+                           *> Write student record
+                           *> ----------------------------
+                           MOVE WS-NAME             TO SI-NAME
+                           MOVE WS-AGE              TO SI-AGE
+                           MOVE WS-GENDER           TO SI-GENDER
+                           MOVE WS-CONTACT-NUM      TO SI-CONTACT-NUM
+                           MOVE WS-ASSIGNED-D-ID    TO SI-ASSIGNED-D-ID
+                          
+               
+                           WRITE STUDENT-RECORD
+               
+                           *> ----------------------------
+                           *> Update dorm status to OCCUPIED
+                           *> ----------------------------
+                           MOVE WS-ASSIGNED-D-ID TO DI-ID
+                           READ DORM-FILE
+                           INVALID KEY
+                               DISPLAY "ERROR UPDATING DORM STATUS"
+                           NOT INVALID KEY
+                               MOVE "OCCUPIED" TO DI-STATUS
+                               REWRITE DORM-RECORD
+                                   INVALID KEY
+                                       DISPLAY "ERROR REWRITING "
+                                               "DORM RECORD"
+                                   NOT INVALID KEY
+                                       DISPLAY "STUDENT ADDED AND "
+                                               "ROOM " 
+                                               WS-ASSIGNED-D-ID 
+                                               " MARKED AS OCCUPIED!"
+                               END-REWRITE
+                           END-READ
+               
+                           DISPLAY "ADD ANOTHER? (Y/N):"
+                           ACCEPT WS-ADD-FLAG
+                           PERFORM CONVERT-FLAG
+                       ELSE
+                           MOVE "N" TO WS-ADD-FLAG
+                       END-IF
+                   END-IF
        
                END-PERFORM
        
@@ -450,7 +599,7 @@
                    DISPLAY "Age: " SI-AGE
                    DISPLAY "Gender: " SI-GENDER
                    DISPLAY "Contact Number: " SI-CONTACT-NUM
-                   DISPLAY "Assigned Room: " SI-ASSIGNED-DORM-ID
+                   DISPLAY "Assigned Room: " SI-ASSIGNED-D-ID
                    
                    DISPLAY SPACE
            END-READ
@@ -525,7 +674,7 @@
                            ACCEPT TEMP-ASSIGNED-D-ID
                            IF TEMP-ASSIGNED-D-ID NOT = SPACES
                                MOVE TEMP-ASSIGNED-D-ID 
--                                  TO SI-ASSIGNED-DORM-ID
+-                                  TO SI-ASSIGNED-D-ID
                            END-IF
        
                        END-IF
@@ -633,27 +782,27 @@
            END-IF
            EXIT PARAGRAPH.
            
-       DISPLAY-AVAILABLE-DORMS.
-           MOVE "N" TO UTIL-EOF
-       
-           DISPLAY "============================="
-           DISPLAY "AVAILABLE DORMS"
-           DISPLAY "============================="
-           DISPLAY "   ID    Floor   Room"
-       
-           PERFORM UNTIL UTIL-EOF = "Y"
-           READ DORM-FILE
-               NEXT RECORD
-               AT END
-                   MOVE "Y" TO UTIL-EOF
-               NOT AT END
-                   IF DI-STATUS = "UNOCCUPIED"
-                       DISPLAY DI-ID "     " DI-FLOOR "    " DI-ROOM-NUM
-                   END-IF
-           END-READ
-           END-PERFORM
-       
-           DISPLAY "============================="
-           EXIT PARAGRAPH.
+      *DISPLAY-AVAILABLE-DORMS.
+      *     MOVE "N" TO UTIL-EOF
+      * 
+      *     DISPLAY "============================="
+      *     DISPLAY "AVAILABLE DORMS"
+      *     DISPLAY "============================="
+      *     DISPLAY "   ID    Floor   Room"
+      * 
+      *     PERFORM UNTIL UTIL-EOF = "Y"
+      *     READ DORM-FILE
+      *         NEXT RECORD
+      *         AT END
+      *             MOVE "Y" TO UTIL-EOF
+      *         NOT AT END
+      *             IF DI-STATUS = "UNOCCUPIED"
+      *                 DISPLAY DI-ID "     " DI-FLOOR "    " DI-ROOM-NUM
+      *             END-IF
+      *     END-READ
+      *     END-PERFORM
+      * 
+      *     DISPLAY "============================="
+      *     EXIT PARAGRAPH.
        
        
