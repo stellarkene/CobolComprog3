@@ -4,7 +4,7 @@
        ENVIRONMENT DIVISION.
            INPUT-OUTPUT SECTION.
                FILE-CONTROL.
-           SELECT TENANT-FILE ASSIGN TO "TENANTs.dat"
+           SELECT TENANT-FILE ASSIGN TO "tenants.dat"
 -              ORGANIZATION IS LINE SEQUENTIAL.
 
            SELECT TEMP-TENANT-FILE ASSIGN TO "temp.dat"
@@ -16,8 +16,12 @@
 -                 RECORD KEY IS DI-ID
 -                 FILE STATUS IS WS-DORM-FILE-STATUS.
 
+           SELECT HISTORY-FILE ASSIGN TO "history.dat"
+-              ORGANIZATION IS LINE SEQUENTIAL.
+
        DATA DIVISION.
        FILE SECTION.
+
       *TENANT RECORD
            FD  TENANT-FILE.
        01  TENANT-RECORD.
@@ -58,6 +62,19 @@
            05  DI-WATER-PAID-AMT                   PIC X(7).
            05  DI-STATUS                           PIC X(10).
 
+      *PAYMENT HISTORY RECORD
+       FD  HISTORY-FILE.
+       01  PAYMENT-HISTORY-RECORD.
+           05  PH-TRANSACTION-ID          PIC X(15).
+           05  PH-DORM-ID                 PIC X(10).
+           05  PH-PAYMENT-TYPE            PIC X(15). 
+           05  PH-AMOUNT-DUE              PIC X(7).
+           05  PH-AMOUNT-PAID             PIC X(7).
+           05  PH-PAYMENT-DATE            PIC X(10). 
+           05  PH-DUE-DATE                PIC X(10). 
+           05  PH-TIMESTAMP               PIC X(19). 
+           05  PH-NOTES                   PIC X(100).
+
 
       *WS
        WORKING-STORAGE SECTION.
@@ -67,6 +84,7 @@
        01  UTIL-SM-CHOICE                          PIC 9.
        01  UTIL-MM-CHOICE                          PIC 9.
        01  UTIL-DM-CHOICE                          PIC 9.
+       01  UTIL-PH-CHOICE                          PIC 9.
        01  UTIL-SEARCH-NAME                        PIC X(50).
        01  UTIL-EOF                                PIC X VALUE 'N'.
        01  UTIL-EDIT-AGAIN                         PIC X VALUE "Y".
@@ -128,6 +146,26 @@
        01  WS-ADD-FLAG                             PIC X(2).
        01  WS-AVAILABLE-ROOM-COUNT                 PIC 9(4) VALUE 0.
        01  WS-CANCEL-FLAG                          PIC X VALUE "N".
+       
+      *PAYMENT HISTORY
+       01  WS-PAYMENT-HISTORY-COUNT                PIC 9(8) VALUE 0.
+       01  WS-TRANSACTION-ID                       PIC X(30).
+       01  WS-TRANSACTION-COUNTER                  PIC 9(8) VALUE 1000.
+       01  WS-CURRENT-DATE                         PIC X(10).
+       01  WS-CURRENT-TIME                         PIC X(8).
+       01  WS-TIMESTAMP                            PIC X(19).      
+       01  WS-PAYMENT-TYPE                         PIC X(15).
+       01  WS-AMOUNT-DUE                           PIC X(7).
+       01  WS-AMOUNT-PAID                          PIC X(7).
+       01  WS-PAYMENT-DATE-LOG                     PIC X(10).
+       01  WS-DUE-DATE-LOG                         PIC X(10).
+       01  WS-DORM-ID-TABLE.
+           05  WS-DORM-ID-ENTRY                    OCCURS 100 TIMES.
+               10  WS-STORED-DORM-ID               PIC X(10).
+       01  WS-DORM-ID-COUNT                        PIC 9(3) VALUE 0.
+       01  WS-DORM-INDEX                           PIC 9(3).
+       01  WS-DORM-FOUND                           PIC X VALUE "N".
+       
 
        PROCEDURE DIVISION.
            PERFORM MAIN-MENU.
@@ -148,9 +186,10 @@
            DISPLAY "1 - TENANT MANAGEMENT"
            DISPLAY "2 - DORM MANAGEMENT"
            DISPLAY "3 - RECORD PAYMENT"
-           DISPLAY "4 - EXIT"
+           DISPLAY "4 - PAYMENT HISTORY"
+           DISPLAY "5 - EXIT"
 
-           DISPLAY "ENTER CHOICE (1 - 4): "
+           DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-MM-CHOICE
 
            EVALUATE UTIL-MM-CHOICE
@@ -165,6 +204,9 @@
                    MOVE 0 TO UTIL-PM-CHOICE
                    PERFORM PAYMENT-MANAGEMENT
                WHEN 4
+                   MOVE 0 TO UTIL-PH-CHOICE
+                   PERFORM VIEW-PAYMENT-HISTORY
+               WHEN 5
                    DISPLAY "EXITING..."
                    PERFORM EXIT-PROMT
                WHEN OTHER
@@ -175,6 +217,213 @@
            END-PERFORM
            EXIT PARAGRAPH.
 
+      *============================
+      *FUNCTION: VIEW PAYMENT HISTORY
+      *============================
+       VIEW-PAYMENT-HISTORY.
+           PERFORM UNTIL UTIL-PH-CHOICE = 3
+           PERFORM CLEAR-SCREEN
+
+           DISPLAY "==============================="
+           DISPLAY "   PAYMENT HISTORY SEARCH"
+           DISPLAY "==============================="
+           DISPLAY "1 - View all payments"
+           DISPLAY "2 - View payments by Dorm ID"
+           DISPLAY "3 - Back to main menu"
+
+           DISPLAY "Enter choice(1 - 3): "
+           ACCEPT UTIL-PH-CHOICE
+           
+           EVALUATE UTIL-PH-CHOICE
+               WHEN 1
+                   PERFORM CLEAR-SCREEN
+                   PERFORM DISPLAY-ALL-PAYMENT-HISTORY
+               WHEN 2
+                   PERFORM CLEAR-SCREEN
+                   PERFORM DISPLAY-DORM-PAYMENT-HISTORY
+               WHEN 3
+                   DISPLAY "EXITING PAYMENT HISTORY..."
+                   PERFORM EXIT-PROMT
+               WHEN OTHER 
+                   DISPLAY "INVALID INPUT "
+                   PERFORM EXIT-PROMT
+           END-EVALUATE
+           
+           END-PERFORM
+           
+           EXIT PARAGRAPH.
+       
+      *=====================================
+      *FUNCTION: DISPLAY ALL PAYMENT HISTORY
+      *=====================================
+       DISPLAY-ALL-PAYMENT-HISTORY.
+           OPEN INPUT HISTORY-FILE
+           
+           MOVE "N" TO UTIL-EOF
+           MOVE 0 TO WS-PAYMENT-HISTORY-COUNT
+           
+           DISPLAY " "
+           DISPLAY "================================================"
+           DISPLAY "         ALL PAYMENT TRANSACTIONS"
+           DISPLAY "================================================"
+           DISPLAY " "
+           
+           PERFORM UNTIL UTIL-EOF = "Y"
+               READ HISTORY-FILE
+               AT END
+                   MOVE "Y" TO UTIL-EOF
+               NOT AT END
+                   ADD 1 TO WS-PAYMENT-HISTORY-COUNT
+                   DISPLAY "Transaction ID: " PH-TRANSACTION-ID
+                   DISPLAY "  Dorm ID     : " PH-DORM-ID
+                   DISPLAY "  Type        : " PH-PAYMENT-TYPE
+                   DISPLAY "  Amount Due  : " PH-AMOUNT-DUE
+                   DISPLAY "  Amount Paid : " PH-AMOUNT-PAID
+                   DISPLAY "  Payment Date: " PH-PAYMENT-DATE
+                   DISPLAY "  Due Date    : " PH-DUE-DATE
+                   DISPLAY "  Recorded    : " PH-TIMESTAMP
+                   DISPLAY "  Notes       : " PH-NOTES
+                   DISPLAY "-------------------------------------------"
+               END-READ
+           END-PERFORM
+           
+           CLOSE HISTORY-FILE
+           
+           DISPLAY " "
+           DISPLAY "Total transactions: " WS-PAYMENT-HISTORY-COUNT
+           DISPLAY " "
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+       
+      *=======================================
+      *FUNCTION: DISPLAY DORM PAYMENT HISTORY
+      *=======================================
+       DISPLAY-DORM-PAYMENT-HISTORY.
+           PERFORM CLEAR-SCREEN
+    
+           DISPLAY " "
+           DISPLAY "================================================"
+           DISPLAY "   AVAILABLE DORM IDS (WITH PAYMENT HISTORY)"
+           DISPLAY "================================================"
+           DISPLAY " "
+           
+           *> First, display all unique dorm IDs from history
+           OPEN INPUT HISTORY-FILE
+           
+           MOVE "N" TO UTIL-EOF
+           MOVE 0 TO WS-DORM-ID-COUNT
+           
+           *> Read through file and collect unique dorm IDs
+           PERFORM UNTIL UTIL-EOF = "Y"
+               READ HISTORY-FILE
+                   AT END
+                       MOVE "Y" TO UTIL-EOF
+                   NOT AT END
+                       *> Check if dorm ID already in table
+                       MOVE "N" TO WS-DORM-FOUND
+                       PERFORM VARYING WS-DORM-INDEX FROM 1 BY 1
+                           UNTIL WS-DORM-INDEX > WS-DORM-ID-COUNT
+                           IF WS-STORED-DORM-ID(WS-DORM-INDEX) = 
+                              PH-DORM-ID
+                               MOVE "Y" TO WS-DORM-FOUND
+                           END-IF
+                       END-PERFORM
+                       
+                       *> If not found, add it
+                       IF WS-DORM-FOUND = "N"
+                           IF WS-DORM-ID-COUNT < 100
+                               ADD 1 TO WS-DORM-ID-COUNT
+                               MOVE PH-DORM-ID TO 
+                                   WS-STORED-DORM-ID(WS-DORM-ID-COUNT)
+                           END-IF
+                       END-IF
+               END-READ
+           END-PERFORM
+           
+           CLOSE HISTORY-FILE
+           
+           *> Display the unique list
+           IF WS-DORM-ID-COUNT = 0
+               DISPLAY "No dorms with payment history found."
+               DISPLAY " "
+               PERFORM EXIT-PROMT
+               EXIT PARAGRAPH
+           END-IF
+           
+           PERFORM VARYING WS-DORM-INDEX FROM 1 BY 1
+               UNTIL WS-DORM-INDEX > WS-DORM-ID-COUNT
+               DISPLAY "  " WS-STORED-DORM-ID(WS-DORM-INDEX)
+           END-PERFORM
+           
+           DISPLAY " "
+           DISPLAY "Total dorms with history: " WS-DORM-ID-COUNT
+           DISPLAY "================================================"
+           DISPLAY " "
+           
+           *> Now prompt user to enter dorm ID
+           DISPLAY "Enter Dorm ID to view payments: "
+           ACCEPT UTIL-SEARCH-DORM-ID
+           
+           *> Validate that entered dorm ID exists in history
+           MOVE "N" TO WS-DORM-FOUND
+           PERFORM VARYING WS-DORM-INDEX FROM 1 BY 1
+               UNTIL WS-DORM-INDEX > WS-DORM-ID-COUNT
+               IF WS-STORED-DORM-ID(WS-DORM-INDEX) = 
+                  UTIL-SEARCH-DORM-ID
+                   MOVE "Y" TO WS-DORM-FOUND
+               END-IF
+           END-PERFORM
+           
+           IF WS-DORM-FOUND = "N"
+               DISPLAY "ERROR: Dorm ID " UTIL-SEARCH-DORM-ID 
+                       " not found in payment history."
+               DISPLAY " "
+               PERFORM EXIT-PROMT
+               EXIT PARAGRAPH
+           END-IF
+           
+           *> Display detailed history for selected dorm
+           OPEN INPUT HISTORY-FILE
+           
+           MOVE "N" TO UTIL-EOF
+           MOVE 0 TO WS-PAYMENT-HISTORY-COUNT
+           
+           DISPLAY " "
+           DISPLAY "================================================"
+           DISPLAY "  PAYMENT HISTORY FOR DORM: " UTIL-SEARCH-DORM-ID
+           DISPLAY "================================================"
+           DISPLAY " "
+           
+           PERFORM UNTIL UTIL-EOF = "Y"
+               READ HISTORY-FILE
+                   AT END
+                       MOVE "Y" TO UTIL-EOF
+                   NOT AT END
+                       IF PH-DORM-ID = UTIL-SEARCH-DORM-ID
+                           ADD 1 TO WS-PAYMENT-HISTORY-COUNT
+                           DISPLAY "Transaction ID: " PH-TRANSACTION-ID
+                           DISPLAY "  Type        : " PH-PAYMENT-TYPE
+                           DISPLAY "  Amount Due  : " PH-AMOUNT-DUE
+                           DISPLAY "  Amount Paid : " PH-AMOUNT-PAID
+                           DISPLAY "  Payment Date: " PH-PAYMENT-DATE
+                           DISPLAY "  Due Date    : " PH-DUE-DATE
+                           DISPLAY "  Recorded    : " PH-TIMESTAMP
+                           DISPLAY "-----------------------------------"
+                       END-IF
+               END-READ
+           END-PERFORM
+           
+           CLOSE HISTORY-FILE
+           
+           DISPLAY " "
+           DISPLAY "Total transactions for this dorm: " 
+                   WS-PAYMENT-HISTORY-COUNT
+           DISPLAY " "
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+       
+       
+       
       *============================
       *FUNCTION: PAYMENT MANAGEMENT
       *============================
@@ -267,54 +516,66 @@
                
                MOVE UTIL-SEARCH-DORM-ID TO DI-ID
                READ DORM-FILE
-                   INVALID KEY
-                       DISPLAY "ERROR: DORM NOT FOUND."
-                   NOT INVALID KEY
-                       DISPLAY "Last Amount Due: " DI-RENT-AMOUNT
-                       DISPLAY "Last Due Date: " DI-RENT-DUE
-                       DISPLAY " "
+               INVALID KEY
+                   DISPLAY "ERROR: DORM NOT FOUND."
+               NOT INVALID KEY
+                   DISPLAY "Last Amount Due: " DI-RENT-AMOUNT
+                   DISPLAY "Last Due Date: " DI-RENT-DUE
+                   DISPLAY " "
+                   
+                   DISPLAY "Enter NEW amount due for this month: "
+                   ACCEPT TEMP-RENT-AMOUNT
+                   MOVE TEMP-RENT-AMOUNT TO DI-RENT-AMOUNT
+                   
+                   DISPLAY "Enter amount paid: "
+                   ACCEPT TEMP-RENT-PAID
+                   
+                   DISPLAY "Enter payment date (YYYY-MM-DD): "
+                   MOVE SPACES TO WS-DORM-DATE-PAID
+                   ACCEPT WS-DORM-DATE-PAID
+                   
+                   DISPLAY "Enter next due date (YYYY-MM-DD): "
+                   MOVE SPACES TO DI-RENT-DUE
+                   ACCEPT DI-RENT-DUE
+                   
+                   DISPLAY " "
+                   DISPLAY "SUMMARY:"
+                   DISPLAY "  Amount Due: " DI-RENT-AMOUNT
+                   DISPLAY "  Amount Paid: " TEMP-RENT-PAID
+                   DISPLAY "  Payment Date: " WS-DORM-DATE-PAID
+                   DISPLAY "  Next Due Date: " DI-RENT-DUE
+                   DISPLAY " "
+                   DISPLAY "Confirm rent payment (Y/N): "
+                   ACCEPT WS-CONFIRM-PAYMENT
+                   INSPECT WS-CONFIRM-PAYMENT 
+                       CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                       TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                        
-                       DISPLAY "Enter NEW amount due for this month: "
-                       ACCEPT TEMP-RENT-AMOUNT
-                       MOVE TEMP-RENT-AMOUNT TO DI-RENT-AMOUNT
+                   IF WS-CONFIRM-PAYMENT = "Y"
+                       MOVE WS-DORM-DATE-PAID TO DI-RENT-LAST-PAID
+                       MOVE TEMP-RENT-PAID TO DI-RENT-PAID-AMOUNT
                        
-                       DISPLAY "Enter amount paid: "
-                       ACCEPT TEMP-RENT-PAID
+                       *> Set working storage variables FIRST
+                       MOVE UTIL-SEARCH-DORM-ID TO WS-DORM-ID
+                       MOVE "RENT" TO WS-PAYMENT-TYPE
+                       MOVE TEMP-RENT-AMOUNT TO WS-AMOUNT-DUE
+                       MOVE TEMP-RENT-PAID TO WS-AMOUNT-PAID
+                       MOVE WS-DORM-DATE-PAID TO WS-PAYMENT-DATE-LOG
+                       MOVE DI-RENT-DUE TO WS-DUE-DATE-LOG
                        
-                       DISPLAY "Enter payment date (YYYY-MM-DD): "
-                       MOVE SPACES TO WS-DORM-DATE-PAID
-                       ACCEPT WS-DORM-DATE-PAID
-                       
-                       DISPLAY "Enter next due date (YYYY-MM-DD): "
-                       MOVE SPACES TO DI-RENT-DUE
-                       ACCEPT DI-RENT-DUE
-                       
-                       DISPLAY " "
-                       DISPLAY "SUMMARY:"
-                       DISPLAY "  Amount Due: " DI-RENT-AMOUNT
-                       DISPLAY "  Amount Paid: " TEMP-RENT-PAID
-                       DISPLAY "  Payment Date: " WS-DORM-DATE-PAID
-                       DISPLAY "  Next Due Date: " DI-RENT-DUE
-                       DISPLAY " "
-                       DISPLAY "Confirm rent payment (Y/N): "
-                       ACCEPT WS-CONFIRM-PAYMENT
-                       INSPECT WS-CONFIRM-PAYMENT 
-                           CONVERTING "abcdefghijklmnopqrstuvwxyz"
-                           TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                       
-                       IF WS-CONFIRM-PAYMENT = "Y"
-                           MOVE WS-DORM-DATE-PAID TO DI-RENT-LAST-PAID
-                           MOVE TEMP-RENT-PAID TO DI-RENT-PAID-AMOUNT
-                           
-                           REWRITE DORM-RECORD
-                               INVALID KEY
-                                   DISPLAY "ERROR: Could not update."
-                               NOT INVALID KEY
-                                   DISPLAY "Rent payment recorded!"
-                           END-REWRITE
-                       ELSE
-                           DISPLAY "Payment cancelled."
-                       END-IF
+                       REWRITE DORM-RECORD
+                           INVALID KEY
+                               DISPLAY "ERROR: Could not update."
+                           NOT INVALID KEY
+                               *> NOW call the logging function
+                               PERFORM LOG-PAYMENT-HISTORY
+                               
+                               DISPLAY "Rent payment recorded!"
+                       END-REWRITE
+                   ELSE
+                       DISPLAY "Payment cancelled."
+                   END-IF
+                   
                END-READ
                
                CLOSE DORM-FILE
@@ -418,20 +679,30 @@
                        
                        IF WS-CONFIRM-PAYMENT = "Y"
                            MOVE WS-DORM-DATE-PAID 
-                                TO DI-ELECTRICITY-LAST
+-                              TO DI-ELECTRICITY-LAST
                            MOVE TEMP-ELECTRICITY-PAID 
-                                TO DI-ELECTRICITY-PAID-AMT
+-                              TO DI-ELECTRICITY-PAID-AMT
+                           
+                           *> Set working storage variables FIRST
+                           MOVE UTIL-SEARCH-DORM-ID TO WS-DORM-ID
+                           MOVE "ELECTRICITY" TO WS-PAYMENT-TYPE
+                           MOVE TEMP-ELECTRICITY-AMT TO WS-AMOUNT-DUE
+                           MOVE TEMP-ELECTRICITY-PAID TO WS-AMOUNT-PAID
+                           MOVE WS-DORM-DATE-PAID TO WS-PAYMENT-DATE-LOG
+                           MOVE DI-ELECTRICITY-DUE TO WS-DUE-DATE-LOG
                            
                            REWRITE DORM-RECORD
-                               INVALID KEY
-                                   DISPLAY "ERROR: Could not update."
-                               NOT INVALID KEY
-                                   DISPLAY "Electricity payment "
-                                           "recorded!"
+                           INVALID KEY
+                               DISPLAY "ERROR: Could not update."
+                           NOT INVALID KEY
+                               PERFORM LOG-PAYMENT-HISTORY
+                               
+                               DISPLAY "Electricity payment recorded!"
                            END-REWRITE
                        ELSE
                            DISPLAY "Payment cancelled."
                        END-IF
+                       
                END-READ
                
                CLOSE DORM-FILE
@@ -528,20 +799,30 @@
                            CONVERTING "abcdefghijklmnopqrstuvwxyz"
                            TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                        
-                       IF WS-CONFIRM-PAYMENT = "Y"
-                           MOVE WS-DORM-DATE-PAID 
-                                TO DI-WATER-LAST-PAID
-                           MOVE TEMP-WATER-PAID TO DI-WATER-PAID-AMT
-                           
-                           REWRITE DORM-RECORD
-                               INVALID KEY
-                                   DISPLAY "ERROR: Could not update."
-                               NOT INVALID KEY
-                                   DISPLAY "WATER payment recorded!"
-                           END-REWRITE
-                       ELSE
-                           DISPLAY "Payment cancelled."
-                       END-IF
+                    IF WS-CONFIRM-PAYMENT = "Y"
+                       MOVE WS-DORM-DATE-PAID TO DI-WATER-LAST-PAID
+                       MOVE TEMP-WATER-PAID TO DI-WATER-PAID-AMT
+                       
+                       *> Set working storage variables FIRST
+                       MOVE UTIL-SEARCH-DORM-ID TO WS-DORM-ID
+                       MOVE "WATER" TO WS-PAYMENT-TYPE
+                       MOVE TEMP-WATER-AMT TO WS-AMOUNT-DUE
+                       MOVE TEMP-WATER-PAID TO WS-AMOUNT-PAID
+                       MOVE WS-DORM-DATE-PAID TO WS-PAYMENT-DATE-LOG
+                       MOVE DI-WATER-DUE TO WS-DUE-DATE-LOG
+                       
+                       REWRITE DORM-RECORD
+                           INVALID KEY
+                               DISPLAY "ERROR: Could not update."
+                           NOT INVALID KEY
+                               PERFORM LOG-PAYMENT-HISTORY
+                               
+                               DISPLAY "Water payment recorded!"
+                       END-REWRITE
+                   ELSE
+                       DISPLAY "Payment cancelled."
+                   END-IF                 
+                   
                END-READ
                
                CLOSE DORM-FILE
@@ -1366,7 +1647,79 @@
 
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
-
+      *============================
+      *FUNCTION: GENERATE TRANSACTION ID
+      *============================
+       GENERATE-TRANSACTION-ID.
+           ADD 1 TO WS-TRANSACTION-COUNTER
+           
+           ACCEPT WS-CURRENT-DATE FROM DATE YYYYMMDD
+           
+           *> STRING with explicit delimiters to avoid spaces
+           STRING WS-DORM-ID DELIMITED BY "  "
+                  "-" DELIMITED BY SIZE
+                  WS-CURRENT-DATE DELIMITED BY SIZE
+                  "-" DELIMITED BY SIZE
+                  WS-TRANSACTION-COUNTER DELIMITED BY SIZE
+                  INTO WS-TRANSACTION-ID
+           END-STRING
+           
+           EXIT PARAGRAPH.
+       
+      *============================
+      *FUNCTION: LOG PAYMENT HISTORY
+      *============================
+       LOG-PAYMENT-HISTORY.
+           PERFORM GENERATE-TRANSACTION-ID
+           
+           ACCEPT WS-CURRENT-DATE FROM DATE YYYYMMDD
+           ACCEPT WS-CURRENT-TIME FROM TIME
+           
+           *> Format timestamp as YYYY-MM-DD HH:MM:SS
+           STRING WS-CURRENT-DATE(1:4) DELIMITED BY SIZE
+                  "-" DELIMITED BY SIZE
+                  WS-CURRENT-DATE(5:2) DELIMITED BY SIZE
+                  "-" DELIMITED BY SIZE
+                  WS-CURRENT-DATE(7:2) DELIMITED BY SIZE
+                  " " DELIMITED BY SIZE
+                  WS-CURRENT-TIME(1:2) DELIMITED BY SIZE
+                  ":" DELIMITED BY SIZE
+                  WS-CURRENT-TIME(3:2) DELIMITED BY SIZE
+                  ":" DELIMITED BY SIZE
+                  WS-CURRENT-TIME(5:2) DELIMITED BY SIZE
+                  INTO WS-TIMESTAMP
+           END-STRING
+           
+           *> DEBUG: Display what we're about to write
+           DISPLAY "DEBUG - Logging Payment:"
+           DISPLAY "  Transaction ID: " WS-TRANSACTION-ID
+           DISPLAY "  Dorm ID: " WS-DORM-ID
+           DISPLAY "  Payment Type: " WS-PAYMENT-TYPE
+           DISPLAY "  Amount Due: " WS-AMOUNT-DUE
+           DISPLAY "  Amount Paid: " WS-AMOUNT-PAID
+           
+           *> Set all fields in the record
+           MOVE WS-TRANSACTION-ID TO PH-TRANSACTION-ID
+           MOVE WS-DORM-ID TO PH-DORM-ID
+           MOVE WS-PAYMENT-TYPE TO PH-PAYMENT-TYPE
+           MOVE WS-AMOUNT-DUE TO PH-AMOUNT-DUE
+           MOVE WS-AMOUNT-PAID TO PH-AMOUNT-PAID
+           MOVE WS-PAYMENT-DATE-LOG TO PH-PAYMENT-DATE
+           MOVE WS-DUE-DATE-LOG TO PH-DUE-DATE
+           MOVE WS-TIMESTAMP TO PH-TIMESTAMP
+           MOVE SPACES TO PH-NOTES
+           
+           OPEN EXTEND HISTORY-FILE
+           
+           WRITE PAYMENT-HISTORY-RECORD
+           
+           DISPLAY "Payment logged to history - Transaction ID: " 
+                   WS-TRANSACTION-ID
+           
+           CLOSE HISTORY-FILE
+           
+           EXIT PARAGRAPH.
+                  
       *============================
       *FUNCTION: DISPLAY ALL DORM ID
       *============================
