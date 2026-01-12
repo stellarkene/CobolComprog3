@@ -47,12 +47,15 @@
            05  DI-RENT-AMOUNT                      PIC X(6).
            05  DI-RENT-DUE                         PIC X(10).
            05  DI-RENT-LAST-PAID                   PIC X(10).
+           05  DI-RENT-PAID-AMOUNT                 PIC X(6).    
            05  DI-ELECTRICITY-AMT                  PIC X(7).
            05  DI-ELECTRICITY-DUE                  PIC X(10).
            05  DI-ELECTRICITY-LAST                 PIC X(10).
-           05  DI-WIFI-AMT                         PIC X(7).
-           05  DI-WIFI-DUE                         PIC X(10).
-           05  DI-WIFI-LAST-PAID                   PIC X(10).
+           05  DI-ELECTRICITY-PAID-AMT             PIC X(7).
+           05  DI-WATER-AMT                         PIC X(7).
+           05  DI-WATER-DUE                         PIC X(10).
+           05  DI-WATER-LAST-PAID                   PIC X(10).
+           05  DI-WATER-PAID-AMT                    PIC X(7).
            05  DI-STATUS                           PIC X(10).
 
 
@@ -74,7 +77,8 @@
        01  UTIL-ROOM-N                             PIC 999.
        01  UTIL-SEARCH-DORM-ID                     PIC X(10). 
        01  UTIL-DELETE-AGAIN                       PIC X VALUE "N".
-       01  UTIL-CONFIRM-DELETE                     PIC X VALUE "N".              
+       01  UTIL-CONFIRM-DELETE                     PIC X VALUE "N". 
+       01  UTIL-PM-CHOICE                     PIC X.             
 
 
 
@@ -91,13 +95,11 @@
 
       *WS DORM
        01  WS-DORM-ID                              PIC X(10).
-       01  WS-DORM-FLOOR                           PIC X(2).
-       01  WS-DORM-ROOM-NUM                        PIC X(3).
        01  WS-DORM-RENT-AMOUNT                     PIC X(6).
        01  WS-DORM-ELECTRICITY                     PIC 9(4)V99.
-       01  WS-DORM-WIFI                            PIC 9(4)V99.
+       01  WS-DORM-WATER                            PIC 9(4)V99.
        01  WS-DORM-STATUS                          PIC X(10).
-       01  WS-DORM-DATE-PAID                       PIC X(8).
+       01  WS-DORM-DATE-PAID                       PIC X(10).
        01  WS-VALID-ROOM-FLAG                      PIC X VALUE "N".
        01  WS-DORM-FILE-STATUS                     PIC XX.
 
@@ -110,12 +112,17 @@
        01  TEMP-ELECTRICITY-AMT                    PIC X(7).
        01  TEMP-ELECTRICITY-DUE                    PIC X(10).
        01  TEMP-ELECTRICITY-LAST                   PIC X(10).
-       01  TEMP-WIFI-AMT                           PIC X(7).
-       01  TEMP-WIFI-DUE                           PIC X(10).
-       01  TEMP-WIFI-LAST-PAID                     PIC X(10).
+       01  TEMP-WATER-AMT                           PIC X(7).
+       01  TEMP-WATER-DUE                           PIC X(10).
+       01  TEMP-WATER-LAST-PAID                     PIC X(10).
        01  TEMP-STATUS                             PIC X(10).
+       01  TEMP-RENT-PAID                          PIC X(6).
+       01  TEMP-ELECTRICITY-PAID                   PIC X(7).
+       01  TEMP-WATER-PAID                          PIC X(7).
        
-
+      *PAYMENT
+       01  WS-CONFIRM-PAYMENT                      PIC X.
+       
        
       *WS ADD
        01  WS-ADD-FLAG                             PIC X(2).
@@ -156,7 +163,8 @@
                    MOVE 0 TO UTIL-DM-CHOICE
                    PERFORM DORM-MANAGEMENT
                WHEN 3
-                   DISPLAY "PAYMENT MANAGEMENT"
+                   MOVE 0 TO UTIL-PM-CHOICE
+                   PERFORM PAYMENT-MANAGEMENT
                WHEN 4
                    DISPLAY "REPORT MENU"
                WHEN 5
@@ -168,6 +176,381 @@
            END-EVALUATE
 
            END-PERFORM
+           EXIT PARAGRAPH.
+
+      *============================
+      *FUNCTION: PAYMENT MANAGEMENT
+      *============================
+       PAYMENT-MANAGEMENT.
+           PERFORM UNTIL UTIL-PM-CHOICE = 4
+           PERFORM CLEAR-SCREEN
+           
+           DISPLAY "=============================="
+           DISPLAY "    PAYMENT MANAGEMENT"
+           DISPLAY "=============================="
+           DISPLAY "1. PAY RENT"
+           DISPLAY "2. PAY ELECTRICITY"
+           DISPLAY "3. PAY WATER"
+           DISPLAY "4. BACK TO MAIN MENU"
+           DISPLAY "=============================="
+           DISPLAY "Enter your choice: "
+           ACCEPT UTIL-PM-CHOICE
+           
+           EVALUATE UTIL-PM-CHOICE
+               WHEN 1
+                   PERFORM CLEAR-SCREEN
+                   PERFORM PAY-RENT
+               WHEN 2
+                   PERFORM CLEAR-SCREEN
+                   PERFORM PAY-ELECTRICITY
+               WHEN 3
+                   PERFORM CLEAR-SCREEN
+                   PERFORM PAY-WATER
+               WHEN 4
+                   DISPLAY "Returning to main menu..."
+                   PERFORM EXIT-PROMT
+               WHEN OTHER
+                   DISPLAY "INVALID CHOICE"
+                   PERFORM EXIT-PROMT
+           END-EVALUATE
+           END-PERFORM
+           EXIT PARAGRAPH.
+      *============================
+      *FUNCTION: PAY RENT
+      *============================
+       PAY-RENT.
+           DISPLAY "==============================="
+           DISPLAY "        PAY RENT"
+           DISPLAY "==============================="
+           
+           *> Display all occupied dorms
+           DISPLAY " "
+           DISPLAY "OCCUPIED DORMS:"
+           DISPLAY "---------------------------------------"
+           OPEN INPUT DORM-FILE
+           
+           MOVE LOW-VALUES TO DI-ID
+           START DORM-FILE KEY >= DI-ID
+               INVALID KEY
+                   DISPLAY "NO DORMS IN SYSTEM"
+           END-START
+   
+           PERFORM UNTIL WS-DORM-FILE-STATUS NOT = "00"
+               READ DORM-FILE NEXT
+                   AT END
+                       CONTINUE
+                   NOT AT END
+                       IF DI-STATUS = "OCCUPIED"
+                           DISPLAY "ID: " DI-ID 
+                                   " | Last Amount Due: " DI-RENT-AMOUNT
+                                   " | Due: " DI-RENT-DUE
+                                   " | Last Paid: " DI-RENT-LAST-PAID
+                                   " | Amt Paid: " DI-RENT-PAID-AMOUNT
+                       END-IF
+               END-READ
+           END-PERFORM
+           
+           CLOSE DORM-FILE
+           DISPLAY "---------------------------------------"
+           DISPLAY " "
+           
+           DISPLAY "Enter Dorm ID (or EXIT to cancel): "
+           ACCEPT UTIL-SEARCH-DORM-ID
+           
+           *> Convert to uppercase
+           INSPECT UTIL-SEARCH-DORM-ID 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           IF UTIL-SEARCH-DORM-ID = "EXIT"
+               DISPLAY "Payment cancelled."
+               PERFORM EXIT-PROMT
+           ELSE
+               OPEN I-O DORM-FILE
+               
+               MOVE UTIL-SEARCH-DORM-ID TO DI-ID
+               READ DORM-FILE
+                   INVALID KEY
+                       DISPLAY "ERROR: DORM NOT FOUND."
+                   NOT INVALID KEY
+                       DISPLAY "Last Amount Due: " DI-RENT-AMOUNT
+                       DISPLAY "Last Due Date: " DI-RENT-DUE
+                       DISPLAY " "
+                       
+                       DISPLAY "Enter NEW amount due for this month: "
+                       ACCEPT TEMP-RENT-AMOUNT
+                       MOVE TEMP-RENT-AMOUNT TO DI-RENT-AMOUNT
+                       
+                       DISPLAY "Enter amount paid: "
+                       ACCEPT TEMP-RENT-PAID
+                       
+                       DISPLAY "Enter payment date (YYYY-MM-DD): "
+                       MOVE SPACES TO WS-DORM-DATE-PAID
+                       ACCEPT WS-DORM-DATE-PAID
+                       
+                       DISPLAY "Enter next due date (YYYY-MM-DD): "
+                       MOVE SPACES TO DI-RENT-DUE
+                       ACCEPT DI-RENT-DUE
+                       
+                       DISPLAY " "
+                       DISPLAY "SUMMARY:"
+                       DISPLAY "  Amount Due: " DI-RENT-AMOUNT
+                       DISPLAY "  Amount Paid: " TEMP-RENT-PAID
+                       DISPLAY "  Payment Date: " WS-DORM-DATE-PAID
+                       DISPLAY "  Next Due Date: " DI-RENT-DUE
+                       DISPLAY " "
+                       DISPLAY "Confirm rent payment (Y/N): "
+                       ACCEPT WS-CONFIRM-PAYMENT
+                       INSPECT WS-CONFIRM-PAYMENT 
+                           CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                           TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       
+                       IF WS-CONFIRM-PAYMENT = "Y"
+                           MOVE WS-DORM-DATE-PAID TO DI-RENT-LAST-PAID
+                           MOVE TEMP-RENT-PAID TO DI-RENT-PAID-AMOUNT
+                           
+                           REWRITE DORM-RECORD
+                               INVALID KEY
+                                   DISPLAY "ERROR: Could not update."
+                               NOT INVALID KEY
+                                   DISPLAY "Rent payment recorded!"
+                           END-REWRITE
+                       ELSE
+                           DISPLAY "Payment cancelled."
+                       END-IF
+               END-READ
+               
+               CLOSE DORM-FILE
+           END-IF
+           
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+      
+      *============================
+      *FUNCTION: PAY ELECTRICITY
+      *============================
+           PAY-ELECTRICITY.
+           DISPLAY "==============================="
+           DISPLAY "      PAY ELECTRICITY"
+           DISPLAY "==============================="
+           
+           *> Display all occupied dorms
+           DISPLAY " "
+           DISPLAY "OCCUPIED DORMS:"
+           DISPLAY "---------------------------------------"
+           OPEN INPUT DORM-FILE
+           
+           MOVE LOW-VALUES TO DI-ID
+           START DORM-FILE KEY >= DI-ID
+               INVALID KEY
+                   DISPLAY "NO DORMS IN SYSTEM"
+           END-START
+   
+           PERFORM UNTIL WS-DORM-FILE-STATUS NOT = "00"
+               READ DORM-FILE NEXT
+                   AT END
+                       CONTINUE
+                   NOT AT END
+                       IF DI-STATUS = "OCCUPIED"
+                           DISPLAY "ID: " DI-ID 
+                                   " | Last Amount Due: " 
+                                   DI-ELECTRICITY-AMT
+                                   " | Due: " DI-ELECTRICITY-DUE
+                                   " | Last Paid: " 
+                                   DI-ELECTRICITY-LAST
+                                   " | Amt Paid: " 
+                                   DI-ELECTRICITY-PAID-AMT
+                       END-IF
+               END-READ
+           END-PERFORM
+           
+           CLOSE DORM-FILE
+           DISPLAY "---------------------------------------"
+           DISPLAY " "
+           
+           DISPLAY "Enter Dorm ID (or EXIT to cancel): "
+           ACCEPT UTIL-SEARCH-DORM-ID
+           
+           *> Convert to uppercase
+           INSPECT UTIL-SEARCH-DORM-ID 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           IF UTIL-SEARCH-DORM-ID = "EXIT"
+               DISPLAY "Payment cancelled."
+               PERFORM EXIT-PROMT
+           ELSE
+               OPEN I-O DORM-FILE
+               
+               MOVE UTIL-SEARCH-DORM-ID TO DI-ID
+               READ DORM-FILE
+                   INVALID KEY
+                       DISPLAY "ERROR: DORM NOT FOUND."
+                   NOT INVALID KEY
+                       DISPLAY "Last Amount Due: " DI-ELECTRICITY-AMT
+                       DISPLAY "Last Due Date: " DI-ELECTRICITY-DUE
+                       DISPLAY " "
+                       
+                       DISPLAY "Enter NEW electricity bill amount: "
+                       ACCEPT TEMP-ELECTRICITY-AMT
+                       MOVE TEMP-ELECTRICITY-AMT TO DI-ELECTRICITY-AMT
+                       
+                       DISPLAY "Enter amount paid: "
+                       ACCEPT TEMP-ELECTRICITY-PAID
+                       
+                       DISPLAY "Enter payment date (YYYY-MM-DD): "
+                       MOVE SPACES TO WS-DORM-DATE-PAID
+                       ACCEPT WS-DORM-DATE-PAID
+                       
+                       DISPLAY "Enter next due date (YYYY-MM-DD): "
+                       MOVE SPACES TO DI-ELECTRICITY-DUE
+                       ACCEPT DI-ELECTRICITY-DUE
+                       
+                       DISPLAY " "
+                       DISPLAY "SUMMARY:"
+                       DISPLAY "  Amount Due: " DI-ELECTRICITY-AMT
+                       DISPLAY "  Amount Paid: " TEMP-ELECTRICITY-PAID
+                       DISPLAY "  Payment Date: " WS-DORM-DATE-PAID
+                       DISPLAY "  Next Due Date: " DI-ELECTRICITY-DUE
+                       DISPLAY " "
+                       DISPLAY "Confirm payment (Y/N): "
+                       ACCEPT WS-CONFIRM-PAYMENT
+                       INSPECT WS-CONFIRM-PAYMENT 
+                           CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                           TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       
+                       IF WS-CONFIRM-PAYMENT = "Y"
+                           MOVE WS-DORM-DATE-PAID 
+                                TO DI-ELECTRICITY-LAST
+                           MOVE TEMP-ELECTRICITY-PAID 
+                                TO DI-ELECTRICITY-PAID-AMT
+                           
+                           REWRITE DORM-RECORD
+                               INVALID KEY
+                                   DISPLAY "ERROR: Could not update."
+                               NOT INVALID KEY
+                                   DISPLAY "Electricity payment "
+                                           "recorded!"
+                           END-REWRITE
+                       ELSE
+                           DISPLAY "Payment cancelled."
+                       END-IF
+               END-READ
+               
+               CLOSE DORM-FILE
+           END-IF
+           
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+       
+      *============================
+      *FUNCTION: PAY WATER
+      *============================
+           PAY-WATER.
+           DISPLAY "==============================="
+           DISPLAY "        PAY WATER"
+           DISPLAY "==============================="
+           
+           DISPLAY " "
+           DISPLAY "OCCUPIED DORMS:"
+           DISPLAY "---------------------------------------"
+           OPEN INPUT DORM-FILE
+           
+           MOVE LOW-VALUES TO DI-ID
+           START DORM-FILE KEY >= DI-ID
+               INVALID KEY
+                   DISPLAY "NO DORMS IN SYSTEM"
+           END-START
+   
+           PERFORM UNTIL WS-DORM-FILE-STATUS NOT = "00"
+               READ DORM-FILE NEXT
+                   AT END
+                       CONTINUE
+                   NOT AT END
+                       IF DI-STATUS = "OCCUPIED"
+                           DISPLAY "ID: " DI-ID 
+                                   " | Last Amount Due: " DI-WATER-AMT
+                                   " | Due: " DI-WATER-DUE
+                                   " | Last Paid: " DI-WATER-LAST-PAID
+                                   " | Amt Paid: " DI-WATER-PAID-AMT
+                       END-IF
+               END-READ
+           END-PERFORM
+           
+           CLOSE DORM-FILE
+           DISPLAY "---------------------------------------"
+           DISPLAY " "
+           
+           DISPLAY "Enter Dorm ID (or EXIT to cancel): "
+           ACCEPT UTIL-SEARCH-DORM-ID
+           
+           INSPECT UTIL-SEARCH-DORM-ID 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           IF UTIL-SEARCH-DORM-ID = "EXIT"
+               DISPLAY "Payment cancelled."
+               PERFORM EXIT-PROMT
+           ELSE
+               OPEN I-O DORM-FILE
+               
+               MOVE UTIL-SEARCH-DORM-ID TO DI-ID
+               READ DORM-FILE
+                   INVALID KEY
+                       DISPLAY "ERROR: DORM NOT FOUND."
+                   NOT INVALID KEY
+                       DISPLAY "Last Amount Due: " DI-WATER-AMT
+                       DISPLAY "Last Due Date: " DI-WATER-DUE
+                       DISPLAY " "
+                       
+                       DISPLAY "Enter NEW WATER bill amount: "
+                       ACCEPT TEMP-WATER-AMT
+                       MOVE TEMP-WATER-AMT TO DI-WATER-AMT
+                       
+                       DISPLAY "Enter amount paid: "
+                       ACCEPT TEMP-WATER-PAID
+                       
+                       DISPLAY "Enter payment date (YYYY-MM-DD): "
+                       MOVE SPACES TO WS-DORM-DATE-PAID
+                       ACCEPT WS-DORM-DATE-PAID
+                       
+                       DISPLAY "Enter next due date (YYYY-MM-DD): "
+                       MOVE SPACES TO DI-WATER-DUE
+                       ACCEPT DI-WATER-DUE
+                       
+                       DISPLAY " "
+                       DISPLAY "SUMMARY:"
+                       DISPLAY "  Amount Due: " DI-WATER-AMT
+                       DISPLAY "  Amount Paid: " TEMP-WATER-PAID
+                       DISPLAY "  Payment Date: " WS-DORM-DATE-PAID
+                       DISPLAY "  Next Due Date: " DI-WATER-DUE
+                       DISPLAY " "
+                       DISPLAY "Confirm payment (Y/N): "
+                       ACCEPT WS-CONFIRM-PAYMENT
+                       INSPECT WS-CONFIRM-PAYMENT 
+                           CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                           TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       
+                       IF WS-CONFIRM-PAYMENT = "Y"
+                           MOVE WS-DORM-DATE-PAID 
+                                TO DI-WATER-LAST-PAID
+                           MOVE TEMP-WATER-PAID TO DI-WATER-PAID-AMT
+                           
+                           REWRITE DORM-RECORD
+                               INVALID KEY
+                                   DISPLAY "ERROR: Could not update."
+                               NOT INVALID KEY
+                                   DISPLAY "WATER payment recorded!"
+                           END-REWRITE
+                       ELSE
+                           DISPLAY "Payment cancelled."
+                       END-IF
+               END-READ
+               
+               CLOSE DORM-FILE
+           END-IF
+           
+           PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
       *============================
@@ -223,12 +606,12 @@
        ADD-DORM.
            DISPLAY "YOU CHOSE TO ADD DORM"
            
-           *> Ask if user wants to add dorm
+           
            DISPLAY "ADD DORM? (Y/N): "
            ACCEPT WS-ADD-FLAG
            PERFORM CONVERT-FLAG
        
-           *> Validate input
+           
            PERFORM UNTIL WS-ADD-FLAG = "Y" OR WS-ADD-FLAG = "N"
                DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
                ACCEPT WS-ADD-FLAG
@@ -249,9 +632,8 @@
                    DISPLAY "PLEASE ENTER RENT AMOUNT: "
                    ACCEPT WS-DORM-RENT-AMOUNT
        
-                   *> ----------------------------
+                   
                    *> Generate unique ID (Format: F01-R001)
-                   *> ----------------------------
                    STRING "F" DELIMITED BY SIZE
                           UTIL-FLOOR-N DELIMITED BY SIZE
                           "-R" DELIMITED BY SIZE
@@ -259,9 +641,8 @@
                           INTO WS-DORM-ID
                    END-STRING
        
-                   *> ----------------------------
+                   
                    *> Check if ID already exists
-                   *> ----------------------------
                    MOVE WS-DORM-ID TO DI-ID
                    READ DORM-FILE
                        INVALID KEY
@@ -285,14 +666,12 @@
                                    " ALREADY EXISTS!"
                    END-READ
        
-                   *> ----------------------------
-                   *> Ask if user wants to add another dorm
-                   *> ----------------------------
+                   
                    DISPLAY "ADD ANOTHER? (Y/N):"
                    ACCEPT WS-ADD-FLAG
                    PERFORM CONVERT-FLAG
        
-                   *> Validate input
+                   
                    PERFORM UNTIL WS-ADD-FLAG = "Y" OR WS-ADD-FLAG = "N"
                        DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
                        ACCEPT WS-ADD-FLAG
@@ -320,36 +699,39 @@
        
            PERFORM UNTIL UTIL-EOF = "Y"
                READ DORM-FILE
-                   AT END
-                       MOVE "Y" TO UTIL-EOF
-                   NOT AT END
-                       DISPLAY "======================================="
-                       DISPLAY "           Dorm ID: " DI-ID
-                       DISPLAY "======================================="
-                       DISPLAY "Floor          : " DI-FLOOR
-                       DISPLAY "Room Number    : " DI-ROOM-NUM
-                       DISPLAY "Status         : " DI-STATUS
-                       DISPLAY "---------------------------------------"
-                       
-                       DISPLAY "RENT"
-                       DISPLAY "  Amount       : " DI-RENT-AMOUNT
-                       DISPLAY "  Due Date     : " DI-RENT-DUE
-                       DISPLAY "  Last Paid    : " DI-RENT-LAST-PAID
-                       DISPLAY "---------------------------------------"
-                       
-                       DISPLAY "ELECTRICITY"
-                       DISPLAY "  Amount       : " DI-ELECTRICITY-AMT
-                       DISPLAY "  Due Date     : " DI-ELECTRICITY-DUE
-                       DISPLAY "  Last Paid    : " DI-ELECTRICITY-LAST
-                       DISPLAY "---------------------------------------"
-                       
-                       DISPLAY "WIFI"
-                       DISPLAY "  Amount       : " DI-WIFI-AMT
-                       DISPLAY "  Due Date     : " DI-WIFI-DUE
-                       DISPLAY "  Last Paid    : " DI-WIFI-LAST-PAID
-                       DISPLAY "======================================="
-                       
-                       DISPLAY SPACE
+               AT END
+                   MOVE "Y" TO UTIL-EOF
+               NOT AT END
+                   DISPLAY "======================================="
+                   DISPLAY "           Dorm ID: " DI-ID
+                   DISPLAY "======================================="
+                   DISPLAY "Floor          : " DI-FLOOR
+                   DISPLAY "Room Number    : " DI-ROOM-NUM
+                   DISPLAY "Status         : " DI-STATUS
+                   DISPLAY "---------------------------------------"
+                   
+                   DISPLAY "RENT"
+                   DISPLAY "  Amount Due   : " DI-RENT-AMOUNT
+                   DISPLAY "  Due Date     : " DI-RENT-DUE
+                   DISPLAY "  Amount Paid  : " DI-RENT-PAID-AMOUNT
+                   DISPLAY "  Date Paid    : " DI-RENT-LAST-PAID
+                   DISPLAY "---------------------------------------"
+                   
+                   DISPLAY "ELECTRICITY"
+                   DISPLAY "  Amount Due   : " DI-ELECTRICITY-AMT
+                   DISPLAY "  Due Date     : " DI-ELECTRICITY-DUE
+                   DISPLAY "  Amount Paid  : " DI-ELECTRICITY-PAID-AMT
+                   DISPLAY "  Date Paid    : " DI-ELECTRICITY-LAST
+                   DISPLAY "---------------------------------------"
+                   
+                   DISPLAY "WATER"
+                   DISPLAY "  Amount Due   : " DI-WATER-AMT
+                   DISPLAY "  Due Date     : " DI-WATER-DUE
+                   DISPLAY "  Amount Paid  : " DI-WATER-PAID-AMT
+                   DISPLAY "  Date Paid    : " DI-WATER-LAST-PAID
+                   DISPLAY "======================================="
+                   
+                   DISPLAY SPACE
                END-READ
            END-PERFORM
        
@@ -390,14 +772,14 @@
                    DISPLAY "Current Status: " DI-STATUS
                    DISPLAY " "
        
-                   *> Edit Floor
+                   
                    DISPLAY "Edit Floor (keep empty to unchanged): "
                    ACCEPT TEMP-FLOOR
                    IF TEMP-FLOOR NOT = SPACES
                        MOVE TEMP-FLOOR TO DI-FLOOR
                    END-IF
        
-                   *> Edit Room Number
+                   
                    DISPLAY "Edit Room Number "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-ROOM-NUM
@@ -405,7 +787,7 @@
                        MOVE TEMP-ROOM-NUM TO DI-ROOM-NUM
                    END-IF
        
-                   *> Edit Rent Amount
+                   
                    DISPLAY "Edit Rent Amount "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-RENT-AMOUNT
@@ -413,7 +795,7 @@
                        MOVE TEMP-RENT-AMOUNT TO DI-RENT-AMOUNT
                    END-IF
        
-                   *> Edit Rent Due Date
+                   
                    DISPLAY "Edit Rent Due Date "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-RENT-DUE
@@ -421,7 +803,7 @@
                        MOVE TEMP-RENT-DUE TO DI-RENT-DUE
                    END-IF
        
-                   *> Edit Last Rent Paid Date
+                   
                    DISPLAY "Edit Last Rent Paid "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-RENT-LAST-PAID
@@ -430,7 +812,7 @@
                             TO DI-RENT-LAST-PAID
                    END-IF
        
-                   *> Edit Electricity Amount
+                   
                    DISPLAY "Edit Electricity Amount "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-ELECTRICITY-AMT
@@ -439,7 +821,7 @@
                             TO DI-ELECTRICITY-AMT
                    END-IF
        
-                   *> Edit Electricity Due Date
+                   
                    DISPLAY "Edit Electricity Due "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-ELECTRICITY-DUE
@@ -448,7 +830,7 @@
                             TO DI-ELECTRICITY-DUE
                    END-IF
        
-                   *> Edit Last Electricity Paid
+                   
                    DISPLAY "Edit Last Electricity Paid "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-ELECTRICITY-LAST
@@ -457,32 +839,32 @@
                             TO DI-ELECTRICITY-LAST
                    END-IF
        
-                   *> Edit WiFi Amount
-                   DISPLAY "Edit WiFi Amount "
+                   
+                   DISPLAY "Edit WATER Amount "
                            "(keep empty to unchanged): "
-                   ACCEPT TEMP-WIFI-AMT
-                   IF TEMP-WIFI-AMT NOT = SPACES
-                       MOVE TEMP-WIFI-AMT TO DI-WIFI-AMT
+                   ACCEPT TEMP-WATER-AMT
+                   IF TEMP-WATER-AMT NOT = SPACES
+                       MOVE TEMP-WATER-AMT TO DI-WATER-AMT
                    END-IF
        
-                   *> Edit WiFi Due Date
-                   DISPLAY "Edit WiFi Due "
+                   
+                   DISPLAY "Edit WATER Due "
                            "(keep empty to unchanged): "
-                   ACCEPT TEMP-WIFI-DUE
-                   IF TEMP-WIFI-DUE NOT = SPACES
-                       MOVE TEMP-WIFI-DUE TO DI-WIFI-DUE
+                   ACCEPT TEMP-WATER-DUE
+                   IF TEMP-WATER-DUE NOT = SPACES
+                       MOVE TEMP-WATER-DUE TO DI-WATER-DUE
                    END-IF
        
-                   *> Edit Last WiFi Paid
-                   DISPLAY "Edit Last WiFi Paid "
+                   
+                   DISPLAY "Edit Last WATER Paid "
                            "(keep empty to unchanged): "
-                   ACCEPT TEMP-WIFI-LAST-PAID
-                   IF TEMP-WIFI-LAST-PAID NOT = SPACES
-                       MOVE TEMP-WIFI-LAST-PAID 
-                            TO DI-WIFI-LAST-PAID
+                   ACCEPT TEMP-WATER-LAST-PAID
+                   IF TEMP-WATER-LAST-PAID NOT = SPACES
+                       MOVE TEMP-WATER-LAST-PAID 
+                            TO DI-WATER-LAST-PAID
                    END-IF
        
-                   *> Edit Status
+                   
                    DISPLAY "Edit Status (OCCUPIED/UNOCCUPIED) "
                            "(keep empty to unchanged): "
                    ACCEPT TEMP-STATUS
@@ -499,7 +881,7 @@
                        END-IF
                    END-IF
        
-                   *> Rewrite the record
+                   
                    REWRITE DORM-RECORD
                        INVALID KEY
                            DISPLAY "ERROR: Could not update dorm."
@@ -539,7 +921,7 @@
        
                OPEN I-O DORM-FILE
        
-               *> Try to read the dorm record
+               
                MOVE UTIL-SEARCH-DORM-ID TO DI-ID
                READ DORM-FILE
                    INVALID KEY
@@ -549,7 +931,7 @@
                    NOT INVALID KEY
                        MOVE "Y" TO UTIL-DELETE-FOUND
                        
-                       *> Display dorm information
+                       
                        DISPLAY "Found Dorm:"
                        DISPLAY "  ID: " DI-ID
                        DISPLAY "  Floor: " DI-FLOOR
@@ -558,7 +940,7 @@
                        DISPLAY "  Status: " DI-STATUS
                        DISPLAY " "
        
-                       *> Check if dorm is occupied
+                       
                        IF DI-STATUS = "OCCUPIED"
                            DISPLAY "WARNING: This room is currently "
                                    "OCCUPIED!"
@@ -572,7 +954,7 @@
                            PERFORM CONVERT-FLAG-DELETE
                        END-IF
        
-                       *> Perform deletion if confirmed
+                       
                        IF UTIL-CONFIRM-DELETE = "Y"
                            DELETE DORM-FILE
                                INVALID KEY
@@ -671,9 +1053,7 @@
                    DISPLAY "ADD STUDENT"
                    DISPLAY "==============="
        
-                   *> ----------------------------
-                   *> Display available rooms
-                   *> ----------------------------
+                   
                    DISPLAY " "
                    DISPLAY "AVAILABLE ROOMS:"
                    DISPLAY "----------------"
@@ -706,9 +1086,8 @@
                                "CANNOT ADD STUDENT."
                        MOVE "N" TO WS-ADD-FLAG
                    ELSE
-                       *> ----------------------------
+                       
                        *> Get student information
-                       *> ----------------------------
                        DISPLAY "Name: " WITH NO ADVANCING
                        ACCEPT WS-NAME
                        DISPLAY "Age: " WITH NO ADVANCING
@@ -718,9 +1097,8 @@
                        DISPLAY "Contact Number: " WITH NO ADVANCING
                        ACCEPT WS-CONTACT-NUM
            
-                       *> ----------------------------
+                       
                        *> Room assignment with validation
-                       *> ----------------------------
                        MOVE "N" TO WS-VALID-ROOM-FLAG
                        MOVE "N" TO WS-CANCEL-FLAG
                        PERFORM UNTIL WS-VALID-ROOM-FLAG = "Y"
@@ -809,7 +1187,6 @@
        
            END-IF
        
-           DISPLAY "Students saved successfully!"
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
        
