@@ -148,10 +148,9 @@
            DISPLAY "1 - STUDENT MANAGEMENT"
            DISPLAY "2 - DORM MANAGEMENT"
            DISPLAY "3 - RECORD PAYMENT"
-           DISPLAY "4 - REPORTS"
-           DISPLAY "5 - EXIT"
+           DISPLAY "4 - EXIT"
 
-           DISPLAY "ENTER CHOICE (1 - 5): "
+           DISPLAY "ENTER CHOICE (1 - 4): "
            ACCEPT UTIL-MM-CHOICE
 
            EVALUATE UTIL-MM-CHOICE
@@ -166,8 +165,6 @@
                    MOVE 0 TO UTIL-PM-CHOICE
                    PERFORM PAYMENT-MANAGEMENT
                WHEN 4
-                   DISPLAY "REPORT MENU"
-               WHEN 5
                    DISPLAY "EXITING..."
                    PERFORM EXIT-PROMT
                WHEN OTHER
