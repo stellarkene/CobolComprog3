@@ -52,10 +52,10 @@
            05  DI-ELECTRICITY-DUE                  PIC X(10).
            05  DI-ELECTRICITY-LAST                 PIC X(10).
            05  DI-ELECTRICITY-PAID-AMT             PIC X(7).
-           05  DI-WATER-AMT                         PIC X(7).
-           05  DI-WATER-DUE                         PIC X(10).
-           05  DI-WATER-LAST-PAID                   PIC X(10).
-           05  DI-WATER-PAID-AMT                    PIC X(7).
+           05  DI-WATER-AMT                        PIC X(7).
+           05  DI-WATER-DUE                        PIC X(10).
+           05  DI-WATER-LAST-PAID                  PIC X(10).
+           05  DI-WATER-PAID-AMT                   PIC X(7).
            05  DI-STATUS                           PIC X(10).
 
 
@@ -78,7 +78,7 @@
        01  UTIL-SEARCH-DORM-ID                     PIC X(10). 
        01  UTIL-DELETE-AGAIN                       PIC X VALUE "N".
        01  UTIL-CONFIRM-DELETE                     PIC X VALUE "N". 
-       01  UTIL-PM-CHOICE                     PIC X.             
+       01  UTIL-PM-CHOICE                          PIC X.             
 
 
 
@@ -97,7 +97,7 @@
        01  WS-DORM-ID                              PIC X(10).
        01  WS-DORM-RENT-AMOUNT                     PIC X(6).
        01  WS-DORM-ELECTRICITY                     PIC 9(4)V99.
-       01  WS-DORM-WATER                            PIC 9(4)V99.
+       01  WS-DORM-WATER                           PIC 9(4)V99.
        01  WS-DORM-STATUS                          PIC X(10).
        01  WS-DORM-DATE-PAID                       PIC X(10).
        01  WS-VALID-ROOM-FLAG                      PIC X VALUE "N".
@@ -112,13 +112,13 @@
        01  TEMP-ELECTRICITY-AMT                    PIC X(7).
        01  TEMP-ELECTRICITY-DUE                    PIC X(10).
        01  TEMP-ELECTRICITY-LAST                   PIC X(10).
-       01  TEMP-WATER-AMT                           PIC X(7).
-       01  TEMP-WATER-DUE                           PIC X(10).
-       01  TEMP-WATER-LAST-PAID                     PIC X(10).
+       01  TEMP-WATER-AMT                          PIC X(7).
+       01  TEMP-WATER-DUE                          PIC X(10).
+       01  TEMP-WATER-LAST-PAID                    PIC X(10).
        01  TEMP-STATUS                             PIC X(10).
        01  TEMP-RENT-PAID                          PIC X(6).
        01  TEMP-ELECTRICITY-PAID                   PIC X(7).
-       01  TEMP-WATER-PAID                          PIC X(7).
+       01  TEMP-WATER-PAID                         PIC X(7).
        
       *PAYMENT
        01  WS-CONFIRM-PAYMENT                      PIC X.
@@ -684,7 +684,7 @@
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
-       
+
       *============================
       *FUNCTION: VIEW DORMS 
       *============================
