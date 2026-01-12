@@ -72,7 +72,9 @@
        01  UTIL-DELETE-FOUND                       PIC X VALUE "N".
        01  UTIL-FLOOR-N                            PIC 99.
        01  UTIL-ROOM-N                             PIC 999.
-                         
+       01  UTIL-SEARCH-DORM-ID                     PIC X(10). 
+       01  UTIL-DELETE-AGAIN                       PIC X VALUE "N".
+       01  UTIL-CONFIRM-DELETE                     PIC X VALUE "N".              
 
 
 
@@ -99,11 +101,26 @@
        01  WS-VALID-ROOM-FLAG                      PIC X VALUE "N".
        01  WS-DORM-FILE-STATUS                     PIC XX.
 
+      *WS TEMP DORM
+       01  TEMP-FLOOR                              PIC X(2).
+       01  TEMP-ROOM-NUM                           PIC X(3).
+       01  TEMP-RENT-AMOUNT                        PIC X(6).
+       01  TEMP-RENT-DUE                           PIC X(10).
+       01  TEMP-RENT-LAST-PAID                     PIC X(10).
+       01  TEMP-ELECTRICITY-AMT                    PIC X(7).
+       01  TEMP-ELECTRICITY-DUE                    PIC X(10).
+       01  TEMP-ELECTRICITY-LAST                   PIC X(10).
+       01  TEMP-WIFI-AMT                           PIC X(7).
+       01  TEMP-WIFI-DUE                           PIC X(10).
+       01  TEMP-WIFI-LAST-PAID                     PIC X(10).
+       01  TEMP-STATUS                             PIC X(10).
+       
+
        
       *WS ADD
        01  WS-ADD-FLAG                             PIC X(2).
-       01 WS-AVAILABLE-ROOM-COUNT                  PIC 9(4) VALUE 0.
-       01 WS-CANCEL-FLAG                           PIC X VALUE "N".
+       01  WS-AVAILABLE-ROOM-COUNT                 PIC 9(4) VALUE 0.
+       01  WS-CANCEL-FLAG                          PIC X VALUE "N".
 
        PROCEDURE DIVISION.
            PERFORM MAIN-MENU.
@@ -182,9 +199,11 @@
 
                WHEN 3
                    PERFORM CLEAR-SCREEN
+                   PERFORM EDIT-DORM
                    
                WHEN 4
                    PERFORM CLEAR-SCREEN
+                   PERFORM DELETE-DORM
 
                WHEN 5
                    DISPLAY "EXITING DORM MANAGEMENT..."
@@ -291,7 +310,7 @@
 
        
       *============================
-      *FUNCTION: ADD DORM 
+      *FUNCTION: VIEW DORMS 
       *============================
        VIEW-DORMS.
               
@@ -335,6 +354,250 @@
            END-PERFORM
        
            CLOSE DORM-FILE
+       
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+       
+      *============================
+      *FUNCTION: EDIT DORMS 
+      *============================
+       EDIT-DORM.
+           DISPLAY "YOU CHOSE TO EDIT DORM"
+       
+           MOVE "Y" TO UTIL-EDIT-AGAIN
+       
+           PERFORM UNTIL UTIL-EDIT-AGAIN = "N"
+               PERFORM SHOW-DORM-ID
+       
+               DISPLAY "Enter Dorm ID to edit (e.g., F01-R001): "
+               ACCEPT UTIL-SEARCH-DORM-ID
+       
+               OPEN I-O DORM-FILE
+       
+               *> Try to read the dorm record
+               MOVE UTIL-SEARCH-DORM-ID TO DI-ID
+               READ DORM-FILE
+                   INVALID KEY
+                   DISPLAY "ERROR: DORM " UTIL-SEARCH-DORM-ID
+                           " NOT FOUND."
+                   MOVE "N" TO UTIL-EDIT-FOUND
+                   NOT INVALID KEY
+                   MOVE "Y" TO UTIL-EDIT-FOUND
+                   DISPLAY "Editing dorm: " DI-ID
+                   DISPLAY "Current Floor: " DI-FLOOR
+                   DISPLAY "Current Room: " DI-ROOM-NUM
+                   DISPLAY "Current Rent: " DI-RENT-AMOUNT
+                   DISPLAY "Current Status: " DI-STATUS
+                   DISPLAY " "
+       
+                   *> Edit Floor
+                   DISPLAY "Edit Floor (keep empty to unchanged): "
+                   ACCEPT TEMP-FLOOR
+                   IF TEMP-FLOOR NOT = SPACES
+                       MOVE TEMP-FLOOR TO DI-FLOOR
+                   END-IF
+       
+                   *> Edit Room Number
+                   DISPLAY "Edit Room Number "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-ROOM-NUM
+                   IF TEMP-ROOM-NUM NOT = SPACES
+                       MOVE TEMP-ROOM-NUM TO DI-ROOM-NUM
+                   END-IF
+       
+                   *> Edit Rent Amount
+                   DISPLAY "Edit Rent Amount "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-RENT-AMOUNT
+                   IF TEMP-RENT-AMOUNT NOT = SPACES
+                       MOVE TEMP-RENT-AMOUNT TO DI-RENT-AMOUNT
+                   END-IF
+       
+                   *> Edit Rent Due Date
+                   DISPLAY "Edit Rent Due Date "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-RENT-DUE
+                   IF TEMP-RENT-DUE NOT = SPACES
+                       MOVE TEMP-RENT-DUE TO DI-RENT-DUE
+                   END-IF
+       
+                   *> Edit Last Rent Paid Date
+                   DISPLAY "Edit Last Rent Paid "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-RENT-LAST-PAID
+                   IF TEMP-RENT-LAST-PAID NOT = SPACES
+                       MOVE TEMP-RENT-LAST-PAID 
+                            TO DI-RENT-LAST-PAID
+                   END-IF
+       
+                   *> Edit Electricity Amount
+                   DISPLAY "Edit Electricity Amount "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-ELECTRICITY-AMT
+                   IF TEMP-ELECTRICITY-AMT NOT = SPACES
+                       MOVE TEMP-ELECTRICITY-AMT 
+                            TO DI-ELECTRICITY-AMT
+                   END-IF
+       
+                   *> Edit Electricity Due Date
+                   DISPLAY "Edit Electricity Due "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-ELECTRICITY-DUE
+                   IF TEMP-ELECTRICITY-DUE NOT = SPACES
+                       MOVE TEMP-ELECTRICITY-DUE 
+                            TO DI-ELECTRICITY-DUE
+                   END-IF
+       
+                   *> Edit Last Electricity Paid
+                   DISPLAY "Edit Last Electricity Paid "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-ELECTRICITY-LAST
+                   IF TEMP-ELECTRICITY-LAST NOT = SPACES
+                       MOVE TEMP-ELECTRICITY-LAST 
+                            TO DI-ELECTRICITY-LAST
+                   END-IF
+       
+                   *> Edit WiFi Amount
+                   DISPLAY "Edit WiFi Amount "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-WIFI-AMT
+                   IF TEMP-WIFI-AMT NOT = SPACES
+                       MOVE TEMP-WIFI-AMT TO DI-WIFI-AMT
+                   END-IF
+       
+                   *> Edit WiFi Due Date
+                   DISPLAY "Edit WiFi Due "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-WIFI-DUE
+                   IF TEMP-WIFI-DUE NOT = SPACES
+                       MOVE TEMP-WIFI-DUE TO DI-WIFI-DUE
+                   END-IF
+       
+                   *> Edit Last WiFi Paid
+                   DISPLAY "Edit Last WiFi Paid "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-WIFI-LAST-PAID
+                   IF TEMP-WIFI-LAST-PAID NOT = SPACES
+                       MOVE TEMP-WIFI-LAST-PAID 
+                            TO DI-WIFI-LAST-PAID
+                   END-IF
+       
+                   *> Edit Status
+                   DISPLAY "Edit Status (OCCUPIED/UNOCCUPIED) "
+                           "(keep empty to unchanged): "
+                   ACCEPT TEMP-STATUS
+                   IF TEMP-STATUS NOT = SPACES
+                       INSPECT TEMP-STATUS 
+                           CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                           TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       IF TEMP-STATUS = "OCCUPIED" OR
+                          TEMP-STATUS = "UNOCCUPIED"
+                           MOVE TEMP-STATUS TO DI-STATUS
+                       ELSE
+                           DISPLAY "Invalid status. "
+                                   "Keeping current value."
+                       END-IF
+                   END-IF
+       
+                   *> Rewrite the record
+                   REWRITE DORM-RECORD
+                       INVALID KEY
+                           DISPLAY "ERROR: Could not update dorm."
+                       NOT INVALID KEY
+                           DISPLAY "Dorm record updated successfully!"
+                   END-REWRITE
+               END-READ
+       
+               CLOSE DORM-FILE
+       
+               IF UTIL-EDIT-FOUND = "N"
+                   DISPLAY "Dorm not found."
+               END-IF
+       
+               DISPLAY "Edit another dorm? (Y/N): "
+               ACCEPT UTIL-EDIT-AGAIN
+               PERFORM CONVERT-FLAG-EDIT
+       
+           END-PERFORM
+       
+           PERFORM EXIT-PROMT
+           EXIT PARAGRAPH.
+
+      *============================
+      *FUNCTION: DELETE DORMS 
+      *============================
+       DELETE-DORM.
+           DISPLAY "YOU CHOSE TO DELETE DORM"
+       
+           MOVE "Y" TO UTIL-DELETE-AGAIN
+       
+           PERFORM UNTIL UTIL-DELETE-AGAIN = "N"
+               PERFORM SHOW-DORM-ID
+       
+               DISPLAY "Enter Dorm ID to delete (e.g., F01-R001): "
+               ACCEPT UTIL-SEARCH-DORM-ID
+       
+               OPEN I-O DORM-FILE
+       
+               *> Try to read the dorm record
+               MOVE UTIL-SEARCH-DORM-ID TO DI-ID
+               READ DORM-FILE
+                   INVALID KEY
+                       DISPLAY "ERROR: DORM " UTIL-SEARCH-DORM-ID
+                               " NOT FOUND."
+                       MOVE "N" TO UTIL-DELETE-FOUND
+                   NOT INVALID KEY
+                       MOVE "Y" TO UTIL-DELETE-FOUND
+                       
+                       *> Display dorm information
+                       DISPLAY "Found Dorm:"
+                       DISPLAY "  ID: " DI-ID
+                       DISPLAY "  Floor: " DI-FLOOR
+                       DISPLAY "  Room: " DI-ROOM-NUM
+                       DISPLAY "  Rent: " DI-RENT-AMOUNT
+                       DISPLAY "  Status: " DI-STATUS
+                       DISPLAY " "
+       
+                       *> Check if dorm is occupied
+                       IF DI-STATUS = "OCCUPIED"
+                           DISPLAY "WARNING: This room is currently "
+                                   "OCCUPIED!"
+                           DISPLAY "Are you sure you want to delete? "
+                                   "(Y/N): "
+                           ACCEPT UTIL-CONFIRM-DELETE
+                           PERFORM CONVERT-FLAG-DELETE
+                       ELSE
+                           DISPLAY "Confirm deletion (Y/N): "
+                           ACCEPT UTIL-CONFIRM-DELETE
+                           PERFORM CONVERT-FLAG-DELETE
+                       END-IF
+       
+                       *> Perform deletion if confirmed
+                       IF UTIL-CONFIRM-DELETE = "Y"
+                           DELETE DORM-FILE
+                               INVALID KEY
+                                   DISPLAY "ERROR: Could not delete "
+                                           "dorm."
+                               NOT INVALID KEY
+                                   DISPLAY "Dorm " UTIL-SEARCH-DORM-ID
+                                           " deleted successfully!"
+                           END-DELETE
+                       ELSE
+                           DISPLAY "Deletion cancelled."
+                       END-IF
+               END-READ
+       
+               CLOSE DORM-FILE
+       
+               IF UTIL-DELETE-FOUND = "N"
+                   DISPLAY "Dorm not found."
+               END-IF
+       
+               DISPLAY "Delete another dorm? (Y/N): "
+               ACCEPT UTIL-DELETE-AGAIN
+               PERFORM CONVERT-FLAG-DELETE-AGAIN
+       
+           END-PERFORM
        
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
@@ -386,30 +649,7 @@
            END-PERFORM
            EXIT PARAGRAPH.
 
-      *======================
-      *FUNCTION: CLEAR-SCREEN
-      *======================
-       CLEAR-SCREEN.
-           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
-           IF UTIL-OS-NAME = "Windows_NT"
-               MOVE "cls" TO UTIL-CLEAR-COMMAND
-           ELSE
-               MOVE "clear" TO UTIL-CLEAR-COMMAND
-           END-IF
-
-           CALL "SYSTEM" USING UTIL-CLEAR-COMMAND
-           
-           EXIT PARAGRAPH.
-
-      *=======================
-      *FUNCTION: EXIT-PROMT
-      *=======================
-       EXIT-PROMT.
-
-           DISPLAY "Press enter to proceed."
-           ACCEPT OMITTED
-
-           EXIT PARAGRAPH.
+      
 
       *=====================
       *FUNCTION: ADD-STUDENT
@@ -422,8 +662,8 @@
        
            IF WS-ADD-FLAG = "Y"
                *> Open files once
-               OPEN EXTEND STUDENT-FILE
-               OPEN I-O DORM-FILE   *> Indexed, allows REWRITE
+               OPEN EXTEND STUDENT-FILE *>Line sequential
+               OPEN I-O DORM-FILE   *> Indexed
        
                PERFORM UNTIL WS-ADD-FLAG = "N"
        
@@ -488,18 +728,18 @@
                                    WITH NO ADVANCING
                            ACCEPT WS-ASSIGNED-D-ID
                            
-                           *> Convert to uppercase for comparison
+                           
                            INSPECT WS-ASSIGNED-D-ID 
                                CONVERTING "abcdefghijklmnopqrstuvwxyz"
                                TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                            
-                           *> Check if user wants to exit
+                           
                            IF WS-ASSIGNED-D-ID = "EXIT"
                                DISPLAY "STUDENT ADDITION CANCELLED."
                                MOVE "Y" TO WS-VALID-ROOM-FLAG
                                MOVE "Y" TO WS-CANCEL-FLAG
                            ELSE
-                               *> Check if room exists and is available
+                               
                                MOVE WS-ASSIGNED-D-ID TO DI-ID
                                READ DORM-FILE
                                INVALID KEY
@@ -525,9 +765,7 @@
            
                        *> Only write student if not cancelled
                        IF WS-CANCEL-FLAG = "N"
-                           *> ----------------------------
-                           *> Write student record
-                           *> ----------------------------
+                           
                            MOVE WS-NAME             TO SI-NAME
                            MOVE WS-AGE              TO SI-AGE
                            MOVE WS-GENDER           TO SI-GENDER
@@ -537,9 +775,7 @@
                
                            WRITE STUDENT-RECORD
                
-                           *> ----------------------------
-                           *> Update dorm status to OCCUPIED
-                           *> ----------------------------
+                           
                            MOVE WS-ASSIGNED-D-ID TO DI-ID
                            READ DORM-FILE
                            INVALID KEY
@@ -757,9 +993,39 @@
            PERFORM EXIT-PROMT
            EXIT PARAGRAPH.
 
-
       *============================
-      *FUNCTION: CONVERT FLAG 
+      *FUNCTION: DISPLAY ALL DORM ID
+      *============================
+       SHOW-DORM-ID.
+               DISPLAY " "
+               DISPLAY "ALL DORM ROOMS:"
+               DISPLAY "----------------------------------------"
+               OPEN INPUT DORM-FILE
+               
+               MOVE LOW-VALUES TO DI-ID
+               START DORM-FILE KEY >= DI-ID
+                   INVALID KEY
+                       DISPLAY "NO DORMS IN SYSTEM"
+               END-START
+       
+               PERFORM UNTIL WS-DORM-FILE-STATUS NOT = "00"
+                   READ DORM-FILE NEXT
+                       AT END
+                           CONTINUE
+                       NOT AT END
+                           DISPLAY "ID: " DI-ID 
+                                   " | Floor: " DI-FLOOR
+                                   " | Room: " DI-ROOM-NUM
+                                   " | Status: " DI-STATUS
+                   END-READ
+               END-PERFORM
+               
+               CLOSE DORM-FILE
+               DISPLAY "----------------------------------------"
+               DISPLAY " "
+               EXIT PARAGRAPH.
+      *============================
+      *FUNCTION: UTILITIES CONVERT ADD FLAG 
       *============================
        CONVERT-FLAG.
            INSPECT WS-ADD-FLAG CONVERTING 'y' TO 'Y'
@@ -768,7 +1034,7 @@
 
        
       *============================
-      *FUNCTION: SAVE STUDENT RECORD 
+      *FUNCTION: UTILITIES OS SAVE STUDENT RECORD 
       *============================
        SAVE-STUDENT-RECORD.
            ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
@@ -784,27 +1050,80 @@
            END-IF
            EXIT PARAGRAPH.
            
-      *DISPLAY-AVAILABLE-DORMS.
-      *     MOVE "N" TO UTIL-EOF
-      * 
-      *     DISPLAY "============================="
-      *     DISPLAY "AVAILABLE DORMS"
-      *     DISPLAY "============================="
-      *     DISPLAY "   ID    Floor   Room"
-      * 
-      *     PERFORM UNTIL UTIL-EOF = "Y"
-      *     READ DORM-FILE
-      *         NEXT RECORD
-      *         AT END
-      *             MOVE "Y" TO UTIL-EOF
-      *         NOT AT END
-      *             IF DI-STATUS = "UNOCCUPIED"
-      *                 DISPLAY DI-ID "     " DI-FLOOR "    " DI-ROOM-NUM
-      *             END-IF
-      *     END-READ
-      *     END-PERFORM
-      * 
-      *     DISPLAY "============================="
-      *     EXIT PARAGRAPH.
+      *================================
+      *FUNCTION: UTILITIES CONVERT EDIT 
+      *================================
+       CONVERT-FLAG-EDIT.
+           INSPECT UTIL-EDIT-AGAIN 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           PERFORM UNTIL UTIL-EDIT-AGAIN = "Y" 
+                      OR UTIL-EDIT-AGAIN = "N"
+               DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
+               ACCEPT UTIL-EDIT-AGAIN
+               INSPECT UTIL-EDIT-AGAIN 
+                   CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                   TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           END-PERFORM
+           EXIT PARAGRAPH.
+      *================================
+      *FUNCTION: UTILITIES CONVERT DELETE 
+      *================================
+       CONVERT-FLAG-DELETE.
+           INSPECT UTIL-CONFIRM-DELETE 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           PERFORM UNTIL UTIL-CONFIRM-DELETE = "Y" 
+                      OR UTIL-CONFIRM-DELETE = "N"
+               DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
+               ACCEPT UTIL-CONFIRM-DELETE
+               INSPECT UTIL-CONFIRM-DELETE 
+                   CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                   TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           END-PERFORM
+           EXIT PARAGRAPH.
        
+      *================================
+      *FUNCTION: UTILITIES CONVERT DELETE AGAIN 
+      *================================
+       CONVERT-FLAG-DELETE-AGAIN.
+           INSPECT UTIL-DELETE-AGAIN 
+               CONVERTING "abcdefghijklmnopqrstuvwxyz"
+               TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           
+           PERFORM UNTIL UTIL-DELETE-AGAIN = "Y" 
+                      OR UTIL-DELETE-AGAIN = "N"
+               DISPLAY "INVALID INPUT. PLEASE ENTER Y OR N: "
+               ACCEPT UTIL-DELETE-AGAIN
+               INSPECT UTIL-DELETE-AGAIN 
+                   CONVERTING "abcdefghijklmnopqrstuvwxyz"
+                   TO "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+           END-PERFORM
+           EXIT PARAGRAPH.
        
+      *======================
+      *FUNCTION: UTILITIES CLEAR-SCREEN
+      *======================
+       CLEAR-SCREEN.
+           ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
+           IF UTIL-OS-NAME = "Windows_NT"
+               MOVE "cls" TO UTIL-CLEAR-COMMAND
+           ELSE
+               MOVE "clear" TO UTIL-CLEAR-COMMAND
+           END-IF
+
+           CALL "SYSTEM" USING UTIL-CLEAR-COMMAND
+           
+           EXIT PARAGRAPH.
+
+      *=======================
+      *FUNCTION: UTILITIES EXIT-PROMT
+      *=======================
+       EXIT-PROMT.
+
+           DISPLAY "Press enter to proceed."
+           ACCEPT OMITTED
+
+           EXIT PARAGRAPH.
