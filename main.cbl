@@ -132,9 +132,11 @@
 
            EVALUATE UTIL-MM-CHOICE
                WHEN 1
+                   MOVE 0 TO UTIL-SM-CHOICE
                    PERFORM STUDENT-MANAGEMENT
 
                WHEN 2
+                   MOVE 0 TO UTIL-DM-CHOICE
                    PERFORM DORM-MANAGEMENT
                WHEN 3
                    DISPLAY "PAYMENT MANAGEMENT"
