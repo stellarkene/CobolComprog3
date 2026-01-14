@@ -1767,12 +1767,12 @@
            ACCEPT UTIL-OS-NAME FROM ENVIRONMENT "OS"
 
            IF UTIL-OS-NAME = "Windows_NT"
-               CALL "SYSTEM" USING "del TENANTs.dat"
-               CALL "SYSTEM" USING "rename temp.dat TENANTs.dat"
+               CALL "SYSTEM" USING "del tenants.dat"
+               CALL "SYSTEM" USING "rename temp.dat tenants.dat"
 
            ELSE
-               CALL "SYSTEM" USING "rm TENANTs.dat"
-               CALL "SYSTEM" USING "mv temp.dat TENANTs.dat"
+               CALL "SYSTEM" USING "rm tenants.dat"
+               CALL "SYSTEM" USING "mv temp.dat tenants.dat"
 
            END-IF
            EXIT PARAGRAPH.
