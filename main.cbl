@@ -187,7 +187,7 @@
            DISPLAY "2 - DORM MANAGEMENT"
            DISPLAY "3 - RECORD PAYMENT"
            DISPLAY "4 - PAYMENT HISTORY"
-           DISPLAY "5 - EXIT"
+           DISPLAY "5 - BACK TO MAIN MENU"
 
            DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-MM-CHOICE
@@ -227,11 +227,11 @@
            DISPLAY "==============================="
            DISPLAY "   PAYMENT HISTORY SEARCH"
            DISPLAY "==============================="
-           DISPLAY "1 - View all payments"
-           DISPLAY "2 - View payments by Dorm ID"
-           DISPLAY "3 - Back to main menu"
+           DISPLAY "1 - VIEW ALL PAYMENTS"
+           DISPLAY "2 - VIEW PAYMENTS BY DORM ID"
+           DISPLAY "3 - BACK TO MAIN MENU"
 
-           DISPLAY "Enter choice(1 - 3): "
+           DISPLAY "ENTER CHOICE (1 - 3): "
            ACCEPT UTIL-PH-CHOICE
            
            EVALUATE UTIL-PH-CHOICE
@@ -438,8 +438,8 @@
            DISPLAY "2. PAY ELECTRICITY"
            DISPLAY "3. PAY WATER"
            DISPLAY "4. BACK TO MAIN MENU"
-           DISPLAY "=============================="
-           DISPLAY "Enter your choice: "
+           
+           DISPLAY "ENTER CHOICE (1 - 4): "
            ACCEPT UTIL-PM-CHOICE
            
            EVALUATE UTIL-PM-CHOICE
@@ -845,7 +845,7 @@
            DISPLAY "2 - VIEW DORMS"
            DISPLAY "3 - EDIT DORM INFO"
            DISPLAY "4 - DELETE DORMS"
-           DISPLAY "5 - EXIT"
+           DISPLAY "5 - BACK TO MAIN MENU"
 
            DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-DM-CHOICE
@@ -1270,13 +1270,13 @@
            PERFORM CLEAR-SCREEN
            
            DISPLAY "==========================="
-           DISPLAY "    STUDNENT MANAGEMENT    "
+           DISPLAY "     TENANT MANAGEMENT     "
            DISPLAY "==========================="
            DISPLAY "1 - ADD TENANT"
            DISPLAY "2 - VIEW TENANTS"
            DISPLAY "3 - EDIT TENANT INFO"
            DISPLAY "4 - DELETE TENANTS"
-           DISPLAY "5 - EXIT"
+           DISPLAY "5 - BACK TO MAIN MENU"
 
            DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-SM-CHOICE
