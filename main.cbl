@@ -187,7 +187,7 @@
            DISPLAY "2 - DORM MANAGEMENT"
            DISPLAY "3 - RECORD PAYMENT"
            DISPLAY "4 - PAYMENT HISTORY"
-           DISPLAY "5 - BACK TO MAIN MENU"
+           DISPLAY "5 - EXIT"
 
            DISPLAY "ENTER CHOICE (1 - 5): "
            ACCEPT UTIL-MM-CHOICE
@@ -438,7 +438,7 @@
            DISPLAY "2. PAY ELECTRICITY"
            DISPLAY "3. PAY WATER"
            DISPLAY "4. BACK TO MAIN MENU"
-           
+
            DISPLAY "ENTER CHOICE (1 - 4): "
            ACCEPT UTIL-PM-CHOICE
            
